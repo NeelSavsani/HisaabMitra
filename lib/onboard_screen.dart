@@ -1,4 +1,4 @@
-
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 
 class OnboardScreen extends StatelessWidget {
@@ -14,7 +14,7 @@ class OnboardScreen extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            // App Logo - Fixed at top-left corner
+            // App Logo - Top Left
             Positioned(
               top: 8,
               left: 14,
@@ -24,6 +24,41 @@ class OnboardScreen extends StatelessWidget {
                 height: 45,
                 fit: BoxFit.contain,
                 alignment: Alignment.centerLeft,
+              ),
+            ),
+
+            // Skip Button - Top Right
+            Positioned(
+              top: 8,
+              right: 14,
+              child: TextButton(
+                onPressed: () {
+                  // TODO: Navigate to Home Screen
+                },
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0xFFE5E0D5),
+                  foregroundColor: const Color(0xFF29213D),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Skip',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(width: 4,),
+                    Icon(Icons.fast_forward)
+                  ],
+                ),
               ),
             ),
 
@@ -37,13 +72,11 @@ class OnboardScreen extends StatelessWidget {
                     const SizedBox(height: 50),
 
                     // Welcome Heading
-                    const Text(
+                    Text(
                       'Welcome to HisaabMitra!',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 27,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF29213D),
+                      style: GoogleFonts.chewy(
+                        fontSize: 26,
                       ),
                     ),
 
