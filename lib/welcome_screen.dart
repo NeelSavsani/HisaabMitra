@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hisaabmitra/register_screen.dart';
 
+import 'login_screen.dart';
 import 'onboard_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -116,7 +118,12 @@ class WelcomeScreen extends StatelessWidget {
                     height: 40,
                     child: ElevatedButton(
                       onPressed: () {
-                        // TODO: Navigate to next onboarding page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFFFDDC35),
@@ -131,92 +138,26 @@ class WelcomeScreen extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Create Your Account',
+                            'Get Started',
                             style: TextStyle(
                               color: Colors.black,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           SizedBox(width: 6),
+                          Icon(
+                            Icons.arrow_forward,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            size: 15,
+                          )
                         ],
                       ),
                     ),
                   ),
 
                   SizedBox(height: 10,),
-
-                  // Login Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 40,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const OnboardScreen(),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.black,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Login To Your Account',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(width: 6),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: 8,),
-
-                  // or
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 110,
-                        height: 1,
-                        color: Colors.black,
-                      ),
-
-                      SizedBox(width: 20,),
-
-                      Text(
-                        'Or',
-                        style: TextStyle(
-                          fontSize: 16
-                        ),
-                      ),
-
-                      SizedBox(width: 20,),
-
-                      Container(
-                        width: 110,
-                        height: 1,
-                        color: Colors.black,
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 8,),
 
                   // Google Button
                   SizedBox(
@@ -254,11 +195,12 @@ class WelcomeScreen extends StatelessWidget {
                                 width: 20,
                                 height: 20,
                               ),
+                              SizedBox(width: 3,),
                               const Text(
                                 'Continue with Google',
                                 style: TextStyle(
                                   color: Colors.black,
-                                  fontSize: 15,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -270,7 +212,45 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(height: 5,)
+                  SizedBox(height: 20,),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Already have an Account?',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      const SizedBox(width: 3),
+
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF8078F9),
+                            decoration: TextDecoration.underline,
+                            decorationColor: Color(0xFF8078F9),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 30,)
                 ],
               ),
             ),

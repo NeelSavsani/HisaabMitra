@@ -48,7 +48,7 @@ class OnboardScreen2 extends StatelessWidget {
 
                     // Onboarding Illustration
                     Image.asset(
-                      'assets/images/onboard_1.png',
+                      'assets/images/onboard_2.png',
                       width: double.infinity,
                       height: MediaQuery.of(context).size.height * 0.4,
                       fit: BoxFit.contain,
@@ -99,7 +99,7 @@ class OnboardScreen2 extends StatelessWidget {
                       ),
                     ),
 
-                    SizedBox(height: 10,),
+                    SizedBox(height: 30,),
 
                     SizedBox(
                       width: 300,
@@ -152,84 +152,62 @@ class OnboardScreen2 extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 14),
-
-                  // Next button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 40,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const WelcomeScreen(),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Next',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Back button (Left)
+                      SizedBox(
+                        width: 65,
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const OnboardScreen(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD2D2D2),
+                            foregroundColor: Colors.black,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          SizedBox(width: 6),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: 10,),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 40,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const OnboardScreen(),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFD2D2D2),
-                        foregroundColor: Colors.black,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                          child: const Icon(Icons.arrow_back, size: 17),
                         ),
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Back',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
+
+                      // Next button (Right)
+                      SizedBox(
+                        width: 65,
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const WelcomeScreen(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          SizedBox(width: 6),
-                        ],
+                          child: const Icon(Icons.arrow_forward, size: 17),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
+
+                  SizedBox(height: 26,)
                 ],
               ),
             ),
