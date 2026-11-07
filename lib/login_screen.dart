@@ -1,7 +1,8 @@
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hisaabmitra/register_screen.dart';
+
+import 'auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,6 +20,46 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
 
   bool isPasswordVisible = false;
+  bool _isSigningIn = false;
+
+  Future<void> _signIn() async {
+    if (!_formKey.currentState!.validate() || _isSigningIn) return;
+    setState(() => _isSigningIn = true);
+    try {
+      await AuthService().signIn(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (_) => false);
+    } on FirebaseAuthException catch (error) {
+      if (mounted) _showError(_authError(error));
+    } catch (error) {
+      if (mounted) _showError('Unable to sign in. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isSigningIn = false);
+    }
+  }
+
+  String _authError(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'invalid-email':
+        return 'Please enter a valid email address.';
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Email or password is incorrect.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      default:
+        return error.message ?? 'Unable to sign in. Please try again.';
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   void dispose() {
@@ -27,20 +68,11 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  InputDecoration inputDecoration({
-    required String hint,
-    Widget? suffixIcon,
-  }) {
+  InputDecoration inputDecoration({required String hint, Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(
-        fontSize: 13,
-        color: Color(0xFF999999),
-      ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 14,
-      ),
+      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       suffixIcon: suffixIcon,
       filled: true,
       fillColor: const Color(0xFFFFFDF5),
@@ -68,13 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Icon(icon, size: 16, color: const Color(0xFF494949)),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.black,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 14, color: Colors.black)),
       ],
     );
   }
@@ -89,10 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
             // Header
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 32,
-                bottom: 34,
-              ),
+              padding: const EdgeInsets.only(top: 32, bottom: 34),
               decoration: const BoxDecoration(
                 color: primaryColor,
                 borderRadius: BorderRadius.only(
@@ -113,10 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(height: 8),
                   Text(
                     "Good to see you again. Let's continue your Hisaab!",
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.white),
                   ),
                 ],
               ),
@@ -151,9 +171,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (value == null || value.trim().isEmpty) {
                               return 'Please enter your email address';
                             }
-                            if (!RegExp(
-                              r'^[^@]+@[^@]+\.[^@]+$',
-                            ).hasMatch(value.trim())) {
+                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$')
+                                .hasMatch(value.trim())) {
                               return 'Please enter a valid email address';
                             }
                             return null;
@@ -161,9 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
 
-
                       const SizedBox(height: 25),
-
 
                       // Password
                       fieldLabel(Icons.lock_outline, 'Password'),
@@ -202,7 +219,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
 
-
                       // Forgot password
                       Align(
                         alignment: Alignment.centerRight,
@@ -228,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: primaryColor,
                               decoration: TextDecoration.underline,
                               decorationColor: primaryColor,
-                              decorationThickness: 1.5
+                              decorationThickness: 1.5,
                             ),
                           ),
                         ),
@@ -241,11 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         height: 42,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              // TODO: Implement login authentication.
-                            }
-                          },
+                          onPressed: _isSigningIn ? null : _signIn,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             foregroundColor: Colors.white,
@@ -254,13 +266,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          child: const Text(
-                            'Sign In',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: _isSigningIn
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Sign In',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
                       ),
 
@@ -336,7 +357,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: primaryColor,
                                 decoration: TextDecoration.underline,
                                 decorationColor: primaryColor,
-                                decorationThickness: 1.5
+                                decorationThickness: 1.5,
                               ),
                             ),
                           ),

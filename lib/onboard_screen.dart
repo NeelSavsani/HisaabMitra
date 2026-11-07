@@ -1,6 +1,5 @@
-import 'package:hisaabmitra/welcome_screen.dart';
-
 import 'onboard2_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -19,10 +18,7 @@ class OnboardScreen extends StatelessWidget {
           children: [
             // Top section: Logo and Skip button
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -89,9 +85,9 @@ class OnboardScreen extends StatelessWidget {
                       width: 300,
                       child: Text(
                         'Say goodbye to messy diaries and confusing '
-                            'calculations. Track your daily expenses, '
-                            'manage your income and keep your finances '
-                            'organised — all in one place.',
+                        'calculations. Track your daily expenses, '
+                        'manage your income and keep your finances '
+                        'organised — all in one place.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 15,
@@ -168,17 +164,12 @@ class OnboardScreen extends StatelessWidget {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.arrow_forward,
-                              size: 17,
-                            ),
-                          ],
+                          children: [Icon(Icons.arrow_forward, size: 17)],
                         ),
                       ),
                     ),
                   ),
-                  SizedBox(height: 30,)
+                  SizedBox(height: 30),
                 ],
               ),
             ),

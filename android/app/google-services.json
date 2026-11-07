@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "618505403235",
+    "project_id": "hisaabmitra-55925",
+    "storage_bucket": "hisaabmitra-55925.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618505403235:android:6b2cd5e9f4a8b1b6aaf156",
+        "android_client_info": {
+          "package_name": "com.example.hisaabmitra"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWnhMUn6OBT6cOFt31QMkuvGj_BSzvVxg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

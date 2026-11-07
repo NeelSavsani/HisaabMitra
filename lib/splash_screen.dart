@@ -1,5 +1,8 @@
-
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'auth_service.dart';
+import 'dashboard_screen.dart';
 import 'onboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -26,21 +29,27 @@ class _SplashScreenState extends State<SplashScreen>
     _scaleAnimation = Tween<double>(
       begin: 0.5,
       end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutBack,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
-    _controller.forward().then((_) {
+    _controller.forward().then((_) async {
       if (!mounted) return;
 
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        try {
+          await AuthService().ensureProfile(user);
+        } catch (_) {
+          // Continue to the dashboard if the database is temporarily unavailable.
+        }
+      }
+      if (!mounted) return;
+
+      final destination = user == null
+          ? const OnboardScreen()
+          : const DashboardScreen();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const OnboardScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => destination),
       );
     });
   }

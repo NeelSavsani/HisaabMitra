@@ -1,6 +1,4 @@
-
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hisaabmitra/register_screen.dart';
 
@@ -22,10 +20,7 @@ class WelcomeScreen extends StatelessWidget {
           children: [
             // Top section: Logo and Skip button
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -46,7 +41,6 @@ class WelcomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 28),
                 child: Column(
                   children: [
-
                     // Onboarding Illustration
                     Image.asset(
                       'assets/images/onboard_1.png',
@@ -104,11 +98,7 @@ class WelcomeScreen extends StatelessWidget {
 
             // Bottom section: Page indicators and Next button
             Padding(
-              padding: const EdgeInsets.only(
-                left: 50,
-                right: 50,
-                bottom: 10
-              ),
+              padding: const EdgeInsets.only(left: 50, right: 50, bottom: 10),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -151,13 +141,13 @@ class WelcomeScreen extends StatelessWidget {
                             color: Colors.black,
                             fontWeight: FontWeight.bold,
                             size: 15,
-                          )
+                          ),
                         ],
                       ),
                     ),
                   ),
 
-                  SizedBox(height: 10,),
+                  SizedBox(height: 10),
 
                   // Google Button
                   SizedBox(
@@ -195,7 +185,7 @@ class WelcomeScreen extends StatelessWidget {
                                 width: 20,
                                 height: 20,
                               ),
-                              SizedBox(width: 3,),
+                              SizedBox(width: 3),
                               const Text(
                                 'Continue with Google',
                                 style: TextStyle(
@@ -212,7 +202,7 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(height: 20,),
+                  SizedBox(height: 20),
 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -250,7 +240,7 @@ class WelcomeScreen extends StatelessWidget {
                     ],
                   ),
 
-                  SizedBox(height: 30,)
+                  SizedBox(height: 30),
                 ],
               ),
             ),

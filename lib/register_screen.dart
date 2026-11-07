@@ -1,6 +1,7 @@
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'auth_service.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -21,11 +22,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
-  TextEditingController();
+      TextEditingController();
 
   bool isPasswordVisible = false;
   bool isConfirmPasswordVisible = false;
   bool isTermsAccepted = true;
+  bool _isRegistering = false;
+
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate() || _isRegistering) return;
+    if (!isTermsAccepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please accept the Terms and Conditions.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isRegistering = true);
+    try {
+      await AuthService().register(
+        name: nameController.text,
+        email: emailController.text,
+        password: passwordController.text,
+      );
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (_) => false);
+    } on FirebaseAuthException catch (error) {
+      if (mounted) {
+        final message = switch (error.code) {
+          'email-already-in-use' => 'An account already exists for this email.',
+          'invalid-email' => 'Please enter a valid email address.',
+          'weak-password' => 'Please choose a stronger password.',
+          _ =>
+            error.message ?? 'Unable to create your account. Please try again.',
+        };
+        _showError(message);
+      }
+    } catch (_) {
+      if (mounted) _showError('Unable to save your profile. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isRegistering = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   void dispose() {
@@ -37,35 +82,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // Common input decoration
-  InputDecoration inputDecoration({
-    required String hint,
-    Widget? suffixIcon,
-  }) {
+  InputDecoration inputDecoration({required String hint, Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(
-        fontSize: 12,
-        color: Color(0xFF999999),
-      ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 12,
-      ),
+      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       suffixIcon: suffixIcon,
       filled: true,
       fillColor: const Color(0xFFFFFDF5),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(9),
-        borderSide: const BorderSide(
-          color: Color(0xFFE7E2D5),
-        ),
+        borderSide: const BorderSide(color: Color(0xFFE7E2D5)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(9),
-        borderSide: const BorderSide(
-          color: primaryColor,
-          width: 1.3,
-        ),
+        borderSide: const BorderSide(color: primaryColor, width: 1.3),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(9),
@@ -82,11 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget fieldLabel(IconData icon, String label) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 15,
-          color: Colors.black87,
-        ),
+        Icon(icon, size: 15, color: Colors.black87),
         const SizedBox(width: 6),
         Text(
           label,
@@ -174,10 +201,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             // Header
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 32,
-                bottom: 32,
-              ),
+              padding: const EdgeInsets.only(top: 32, bottom: 32),
               decoration: const BoxDecoration(
                 color: primaryColor,
                 borderRadius: BorderRadius.only(
@@ -198,10 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   SizedBox(height: 8),
                   Text(
                     "Let's get your Hisaab started!",
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.white),
                   ),
                 ],
               ),
@@ -263,9 +284,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return 'Please enter your email';
                             }
 
-                            if (!RegExp(
-                              r'^[^@]+@[^@]+\.[^@]+$',
-                            ).hasMatch(value.trim())) {
+                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$')
+                                .hasMatch(value.trim())) {
                               return 'Please enter a valid email';
                             }
 
@@ -350,7 +370,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               onPressed: () {
                                 setState(() {
                                   isConfirmPasswordVisible =
-                                  !isConfirmPasswordVisible;
+                                      !isConfirmPasswordVisible;
                                 });
                               },
                               icon: Icon(
@@ -415,8 +435,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ),
                                     ),
                                     TextSpan(
-                                      text:
-                                      ' • Monthly income is completely optional and can be personalized later.',
+                                      text: ' • Monthly income is completely optional and can be personalized later.',
                                     ),
                                   ],
                                 ),
@@ -439,7 +458,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               value: isTermsAccepted,
                               activeColor: primaryColor,
                               materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
+                                  MaterialTapTargetSize.shrinkWrap,
                               visualDensity: VisualDensity.compact,
                               onChanged: (value) {
                                 setState(() {
@@ -457,7 +476,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   style: TextStyle(
                                     fontSize: 10,
                                     height: 1.4,
-                                    fontWeight: FontWeight.w600
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 GestureDetector(
@@ -478,10 +497,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 const Text(
                                   ' & ',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    height: 1.4,
-                                  ),
+                                  style: TextStyle(fontSize: 10, height: 1.4),
                                 ),
                                 GestureDetector(
                                   onTap: () {
@@ -520,24 +536,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         width: double.infinity,
                         height: 42,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (!_formKey.currentState!.validate()) {
-                              return;
-                            }
-
-                            if (!isTermsAccepted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Please accept the Terms and Conditions.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            // TODO: Connect Firebase registration here.
-                          },
+                          onPressed: _isRegistering ? null : _register,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             foregroundColor: Colors.white,
@@ -546,13 +545,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          child: const Text(
-                            'Create Account',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: _isRegistering
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Create Account',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
                       ),
 
@@ -628,7 +636,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 color: primaryColor,
                                 decoration: TextDecoration.underline,
                                 decorationColor: primaryColor,
-                                decorationThickness: 1.5
+                                decorationThickness: 1.5,
                               ),
                             ),
                           ),
