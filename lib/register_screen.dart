@@ -26,8 +26,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool isPasswordVisible = false;
   bool isConfirmPasswordVisible = false;
-  bool isTermsAccepted = true;
+  bool isTermsAccepted = false;
   bool _isRegistering = false;
+
+  bool get _canRegister =>
+      nameController.text.trim().isNotEmpty &&
+      RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(emailController.text.trim()) &&
+      passwordController.text.length >= 8 &&
+      confirmPasswordController.text.isNotEmpty &&
+      confirmPasswordController.text == passwordController.text &&
+      isTermsAccepted;
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate() || _isRegistering) return;
@@ -246,6 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         height: 40,
                         child: TextFormField(
                           controller: nameController,
+                          onChanged: (_) => setState(() {}),
                           style: const TextStyle(
                             fontSize: 12,
                             color: textColor,
@@ -272,6 +281,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: TextFormField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
+                          onChanged: (_) => setState(() {}),
                           style: const TextStyle(
                             fontSize: 12,
                             color: textColor,
@@ -360,6 +370,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: TextFormField(
                           controller: confirmPasswordController,
                           obscureText: !isConfirmPasswordVisible,
+                          onChanged: (_) => setState(() {}),
                           style: const TextStyle(
                             fontSize: 12,
                             color: textColor,
@@ -536,7 +547,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         width: double.infinity,
                         height: 42,
                         child: ElevatedButton(
-                          onPressed: _isRegistering ? null : _register,
+                          onPressed: _isRegistering || !_canRegister
+                              ? null
+                              : _register,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             foregroundColor: Colors.white,

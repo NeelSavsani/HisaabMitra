@@ -66,8 +66,10 @@ class DashboardScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Expanded(
-              child: Center(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 2, 20, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
                 child: profile == null
                     ? const _WelcomeText(username: 'there')
                     : StreamBuilder<DatabaseEvent>(
@@ -87,6 +89,7 @@ class DashboardScreen extends StatelessWidget {
                       ),
               ),
             ),
+            const Expanded(child: SizedBox()),
           ],
         ),
       ),
@@ -101,9 +104,36 @@ class _WelcomeText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      'Welcome $username',
-      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+    final hour = DateTime.now().hour;
+    final trimmedName = username.trim();
+    final firstName = trimmedName.isEmpty
+        ? 'there'
+        : trimmedName.split(RegExp(r'\s+')).first;
+    final greeting = switch (hour) {
+      >= 5 && < 12 => 'Good morning',
+      >= 12 && < 17 => 'Good afternoon',
+      >= 17 && < 21 => 'Good evening',
+      _ => 'Good night',
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$greeting, $firstName!',
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Ready to check your money?',
+          style: TextStyle(
+            fontSize: 13,
+            color: Color(0xFF494323),
+            fontWeight: FontWeight.w500
+          ),
+        ),
+      ],
     );
   }
 }

@@ -22,6 +22,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isPasswordVisible = false;
   bool _isSigningIn = false;
 
+  bool get _canSignIn =>
+      RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(emailController.text.trim()) &&
+      passwordController.text.isNotEmpty;
+
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate() || _isSigningIn) return;
     setState(() => _isSigningIn = true);
@@ -164,6 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: TextFormField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
+                          onChanged: (_) => setState(() {}),
                           decoration: inputDecoration(
                             hint: 'Enter your email address',
                           ),
@@ -193,6 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: TextFormField(
                           controller: passwordController,
                           obscureText: !isPasswordVisible,
+                          onChanged: (_) => setState(() {}),
                           decoration: inputDecoration(
                             hint: 'Enter your password',
                             suffixIcon: IconButton(
@@ -257,7 +263,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         height: 42,
                         child: ElevatedButton(
-                          onPressed: _isSigningIn ? null : _signIn,
+                          onPressed: _isSigningIn || !_canSignIn
+                              ? null
+                              : _signIn,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             foregroundColor: Colors.white,
