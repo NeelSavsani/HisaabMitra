@@ -22,6 +22,66 @@ class DashboardScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAF3),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: SizedBox(
+        width: 62,
+        height: 62,
+        child: FloatingActionButton(
+          onPressed: () {},
+          backgroundColor: const Color(0xFFFFDD32),
+          foregroundColor: Colors.black,
+          elevation: 0,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.add, size: 32),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          height: 78,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              top: BorderSide(
+                color: const Color(0xFFFFDD32).withValues(alpha: 0.2),
+              ),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: const [
+                Expanded(
+                  child: _BottomMenuItem(
+                    label: 'Home',
+                    icon: Icons.grid_view_rounded,
+                    selected: true,
+                  ),
+                ),
+                Expanded(
+                  child: _BottomMenuItem(
+                    label: 'Expenses',
+                    icon: Icons.receipt_long_outlined,
+                  ),
+                ),
+                SizedBox(width: 72),
+                Expanded(
+                  child: _BottomMenuItem(
+                    label: 'Reports',
+                    icon: Icons.analytics_outlined,
+                  ),
+                ),
+                Expanded(
+                  child: _BottomMenuItem(
+                    label: 'Profile',
+                    icon: Icons.account_circle_outlined,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -175,6 +235,32 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _BottomMenuItem extends StatelessWidget {
+  const _BottomMenuItem({
+    required this.label,
+    required this.icon,
+    this.selected = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? const Color(0xFF8078F9) : Colors.black;
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: 25, color: color),
+        const SizedBox(height: 3),
+        Text(label, style: TextStyle(fontSize: 12, color: color)),
+      ],
     );
   }
 }
