@@ -16,20 +16,26 @@ class DashboardScreen extends StatelessWidget {
     final profile = user == null
         ? null
         : FirebaseDatabase.instanceFor(
-            app: Firebase.app(),
-            databaseURL: realtimeDatabaseUrl,
-          ).ref('users/${user.uid}');
+      app: Firebase.app(),
+      databaseURL: realtimeDatabaseUrl,
+    ).ref('users/${user.uid}');
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAF3),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: SizedBox(
-        width: 62,
-        height: 62,
+      floatingActionButton: Container(
+        width: 72,
+        height: 72,
+        padding: const EdgeInsets.all(5),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
         child: FloatingActionButton(
           onPressed: () {},
-          backgroundColor: const Color(0xFFFFDD32),
-          foregroundColor: Colors.black,
+          tooltip: 'Add Expense',
+          backgroundColor: const Color(0xFF8078F9),
+          foregroundColor: Colors.white,
           elevation: 0,
           shape: const CircleBorder(),
           child: const Icon(Icons.add, size: 32),
@@ -37,47 +43,63 @@ class DashboardScreen extends StatelessWidget {
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Container(
-          height: 78,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border(
-              top: BorderSide(
-                color: const Color(0xFFFFDD32).withValues(alpha: 0.2),
+        left: false,
+        right: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 84,
+          child: CustomPaint(
+            painter: const _NotchedBarPainter(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: const [
+                  Expanded(
+                    child: _BottomMenuItem(
+                      label: 'Home',
+                      icon: Icons.grid_view_rounded,
+                      selected: true,
+                    ),
+                  ),
+                  Expanded(
+                    child: _BottomMenuItem(
+                      label: 'Expenses',
+                      icon: Icons.receipt_long_outlined,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 96,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(height: 28),
+                        Text(
+                          'Add Expense',
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.visible,
+                          style: TextStyle(
+                            color: Colors.black54,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: _BottomMenuItem(
+                      label: 'Reports',
+                      icon: Icons.analytics_outlined,
+                    ),
+                  ),
+                  Expanded(
+                    child: _BottomMenuItem(
+                      label: 'Profile',
+                      icon: Icons.account_circle_outlined,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: const [
-                Expanded(
-                  child: _BottomMenuItem(
-                    label: 'Home',
-                    icon: Icons.grid_view_rounded,
-                    selected: true,
-                  ),
-                ),
-                Expanded(
-                  child: _BottomMenuItem(
-                    label: 'Expenses',
-                    icon: Icons.receipt_long_outlined,
-                  ),
-                ),
-                SizedBox(width: 72),
-                Expanded(
-                  child: _BottomMenuItem(
-                    label: 'Reports',
-                    icon: Icons.analytics_outlined,
-                  ),
-                ),
-                Expanded(
-                  child: _BottomMenuItem(
-                    label: 'Profile',
-                    icon: Icons.account_circle_outlined,
-                  ),
-                ),
-              ],
             ),
           ),
         ),
@@ -122,7 +144,7 @@ class DashboardScreen extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (_) => const WelcomeScreen(),
                             ),
-                            (_) => false,
+                                (_) => false,
                           );
                       }
                     },
@@ -155,20 +177,20 @@ class DashboardScreen extends StatelessWidget {
                 child: profile == null
                     ? const _WelcomeText(username: 'there')
                     : StreamBuilder<DatabaseEvent>(
-                        stream: profile.onValue,
-                        builder: (context, snapshot) {
-                          final data = snapshot.data?.snapshot.value;
-                          final username = data is Map
-                              ? data['name']?.toString()
-                              : null;
-                          return _WelcomeText(
-                            username:
-                                username == null || username.trim().isEmpty
-                                ? user?.displayName ?? 'there'
-                                : username,
-                          );
-                        },
-                      ),
+                  stream: profile.onValue,
+                  builder: (context, snapshot) {
+                    final data = snapshot.data?.snapshot.value;
+                    final username = data is Map
+                        ? data['name']?.toString()
+                        : null;
+                    return _WelcomeText(
+                      username:
+                      username == null || username.trim().isEmpty
+                          ? user?.displayName ?? 'there'
+                          : username,
+                    );
+                  },
+                ),
               ),
             ),
             Padding(
@@ -239,6 +261,65 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
+/// Paints the bottom bar with a smooth, wide curved notch in the center
+/// (like the reference design) instead of a circular notch.
+class _NotchedBarPainter extends CustomPainter {
+  const _NotchedBarPainter();
+
+  static const double _cornerRadius = 16;
+  static const double _notchHalfWidth = 78;
+  static const double _notchDepth = 42;
+
+  Path _buildPath(Size size) {
+    final cx = size.width / 2;
+    final path = Path()
+      ..moveTo(0, _cornerRadius)
+      ..quadraticBezierTo(0, 0, _cornerRadius, 0)
+      ..lineTo(cx - _notchHalfWidth, 0)
+    // Smooth curve going down into the notch.
+      ..cubicTo(
+        cx - 50,
+        0,
+        cx - 42,
+        _notchDepth,
+        cx,
+        _notchDepth,
+      )
+    // Smooth curve coming back up out of the notch.
+      ..cubicTo(
+        cx + 42,
+        _notchDepth,
+        cx + 50,
+        0,
+        cx + _notchHalfWidth,
+        0,
+      )
+      ..lineTo(size.width - _cornerRadius, 0)
+      ..quadraticBezierTo(size.width, 0, size.width, _cornerRadius)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    return path;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = _buildPath(size);
+
+    // Box shadow: x: 0, y: -2, blur: 2, spread: 0, color: D5D3F5, opacity: 69%.
+    // (Flutter's blur sigma = CSS/Figma blur / 2.)
+    final shadowPaint = Paint()
+      ..color = const Color(0xFFD5D3F5).withValues(alpha: 0.69)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
+    canvas.drawPath(path.shift(const Offset(0, -2)), shadowPaint);
+
+    canvas.drawPath(path, Paint()..color = Colors.white);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class _BottomMenuItem extends StatelessWidget {
   const _BottomMenuItem({
     required this.label,
@@ -252,14 +333,21 @@ class _BottomMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? const Color(0xFF8078F9) : Colors.black;
+    final color = selected ? const Color(0xFF8078F9) : Colors.black54;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(icon, size: 25, color: color),
         const SizedBox(height: 3),
-        Text(label, style: TextStyle(fontSize: 12, color: color)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: color,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
       ],
     );
   }
@@ -413,8 +501,8 @@ class _MonthlyBudgetCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border.all(
-                  color: const Color(0xFFE7E3D3).withValues(alpha: 0.5),
-                  width: 2
+                    color: const Color(0xFFE7E3D3).withValues(alpha: 0.5),
+                    width: 2
                 ),
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -521,7 +609,7 @@ String _formatRupees(double amount) {
     var leading = digits.substring(0, digits.length - 3);
     leading = leading.replaceAllMapped(
       RegExp(r'\B(?=(\d{2})+(?!\d))'),
-      (_) => ',',
+          (_) => ',',
     );
     grouped = '$leading,$lastThree';
   }
