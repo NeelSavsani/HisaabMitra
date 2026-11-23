@@ -512,7 +512,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 GestureDetector(
                                   onTap: () {
-                                    // TODO: Open Privacy Policy.
+                                    // Open the published HTML privacy policy here.
                                   },
                                   child: const Text(
                                     'Privacy Policy',
