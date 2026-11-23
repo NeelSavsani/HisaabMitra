@@ -253,6 +253,12 @@ class DashboardScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
               child: _MonthlyBudgetCard(profile: profile),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+              child: _RecentTransactionsSection(
+                transactions: profile?.child('transactions'),
+              ),
+            ),
             const Expanded(child: SizedBox()),
           ],
         ),
@@ -318,6 +324,115 @@ class _NotchedBarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _RecentTransactionsSection extends StatelessWidget {
+  const _RecentTransactionsSection({required this.transactions});
+
+  final DatabaseReference? transactions;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DatabaseEvent>(
+      stream: transactions?.onValue,
+      builder: (context, snapshot) {
+        final records = <Map>[];
+        final value = snapshot.data?.snapshot.value;
+        if (value is Map) {
+          for (final item in value.values) {
+            if (item is Map && item['amount'] != null && item['type'] != null) {
+              records.add(Map<Object?, Object?>.from(item));
+            }
+          }
+        }
+        records.sort((a, b) {
+          final dateA = int.tryParse(a['createdAt']?.toString() ?? '') ?? 0;
+          final dateB = int.tryParse(b['createdAt']?.toString() ?? '') ?? 0;
+          return dateB.compareTo(dateA);
+        });
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recent Transaction',
+                  style: GoogleFonts.chewy(fontSize: 20),
+                ),
+                Row(
+                  children: const [
+                    Text(
+                      'See All',
+                      style: TextStyle(color: Color(0xFF8078F9), fontSize: 15),
+                    ),
+                    Icon(Icons.chevron_right, color: Color(0xFF8078F9)),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            if (records.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.history, color: Color(0xFF8078F9), size: 20),
+                    SizedBox(width: 8),
+                    Text('No recent transactions'),
+                  ],
+                ),
+              )
+            else
+              ...records.take(3).map((record) {
+                final type = record['type'].toString();
+                final isIncome = type.toLowerCase() == 'income';
+                final amount =
+                    double.tryParse(record['amount'].toString()) ?? 0;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: isIncome
+                            ? const Color(0xFFE7F5E8)
+                            : const Color(0xFFFFE7E7),
+                        child: Icon(
+                          isIncome
+                              ? Icons.arrow_downward_rounded
+                              : Icons.arrow_upward_rounded,
+                          color: isIncome ? Colors.green : Colors.redAccent,
+                          size: 19,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          type.isEmpty
+                              ? 'Transaction'
+                              : '${type[0].toUpperCase()}${type.substring(1)}',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      Text(
+                        '${isIncome ? '+' : '-'}${_formatRupees(amount)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: isIncome ? Colors.green : Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _BottomMenuItem extends StatelessWidget {
