@@ -4,11 +4,17 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'database_config.dart';
-import 'welcome_screen.dart';
+import 'package:hisaabmitra/config/database_config.dart';
+import 'package:hisaabmitra/screens/add_expense.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
+
+  void _openAddExpense(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AddExpenseScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +38,7 @@ class DashboardScreen extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () => _openAddExpense(context),
           tooltip: 'Add Expense',
           backgroundColor: const Color(0xFF8078F9),
           foregroundColor: Colors.white,
@@ -122,50 +128,10 @@ class DashboardScreen extends StatelessWidget {
                   IconButton(
                     onPressed: () {},
                     tooltip: 'Notifications',
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.zero,
                     icon: const Icon(Icons.notifications_none_rounded),
                     color: const Color(0xFF494323),
-                  ),
-                  const SizedBox(width: 4),
-                  PopupMenuButton<_ProfileMenuAction>(
-                    tooltip: 'Profile menu',
-                    onSelected: (action) async {
-                      switch (action) {
-                        case _ProfileMenuAction.yourProfile:
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Your Profile is coming soon.'),
-                            ),
-                          );
-                          break;
-                        case _ProfileMenuAction.logout:
-                          await FirebaseAuth.instance.signOut();
-                          if (!context.mounted) return;
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (_) => const WelcomeScreen(),
-                            ),
-                                (_) => false,
-                          );
-                      }
-                    },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(
-                        value: _ProfileMenuAction.yourProfile,
-                        child: Text('Your Profile'),
-                      ),
-                      PopupMenuItem(
-                        value: _ProfileMenuAction.logout,
-                        child: Text('Logout'),
-                      ),
-                    ],
-                    child: const CircleAvatar(
-                      radius: 19,
-                      backgroundColor: Color(0xFFE8E3D4),
-                      child: Icon(
-                        Icons.person_outline_rounded,
-                        color: Color(0xFF494323),
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -219,25 +185,46 @@ class DashboardScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
+                        flex: 2,
                         child: _QuickActionButton(
                           label: 'Add Expense',
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
                           icon: Icons.add,
                           backgroundColor: Color(0xFFFFDD32),
                           iconColor: Color(0xFF494323),
+                          onTap: () => _openAddExpense(context),
                         ),
                       ),
+                      SizedBox(width: 12,),
                       Expanded(
+                        flex: 2,
                         child: _QuickActionButton(
                           label: 'Categories',
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
                           icon: Icons.category_rounded,
                           backgroundColor: const Color(0xFF8078F9).withValues(alpha: 0.3),
                           iconColor: const Color(0xFF8078F9),
                         ),
                       ),
+                      SizedBox(width: 12,),
                       Expanded(
+                        flex: 2,
                         child: _QuickActionButton(
                           label: 'Budgets',
+                          labelStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
                           icon: Icons.account_balance_wallet_rounded,
                           backgroundColor: const Color(0xFFF6BA11).withValues(alpha: 0.5),
                           iconColor: Colors.black,
@@ -468,8 +455,6 @@ class _BottomMenuItem extends StatelessWidget {
   }
 }
 
-enum _ProfileMenuAction { yourProfile, logout }
-
 ({double income, double expense}) _monthlyTotals(Object? value) {
   var income = 0.0;
   var expense = 0.0;
@@ -525,8 +510,8 @@ class _MonthlyBalanceCard extends StatelessWidget {
           Text(
             _formatRupees(income - expense),
             style: const TextStyle(
-              fontSize: 25,
-              fontWeight: FontWeight.bold,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
               color: Colors.black,
             ),
           ),
@@ -537,6 +522,15 @@ class _MonthlyBalanceCard extends StatelessWidget {
                 child: _MonthlyAmount(
                   label: 'This Month Income',
                   amount: income,
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black.withValues(alpha: 0.8),
+                  ),
+                  amountStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -544,6 +538,15 @@ class _MonthlyBalanceCard extends StatelessWidget {
                 child: _MonthlyAmount(
                   label: 'This Month Expenses',
                   amount: expense,
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black.withValues(alpha: 0.8),
+                  ),
+                  amountStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -555,7 +558,7 @@ class _MonthlyBalanceCard extends StatelessWidget {
 }
 
 class _MonthlyAmount extends StatelessWidget {
-  const _MonthlyAmount({required this.label, required this.amount});
+  const _MonthlyAmount({required this.label, required this.amount, required TextStyle labelStyle, required TextStyle amountStyle});
 
   final String label;
   final double amount;
@@ -636,7 +639,7 @@ class _MonthlyBudgetCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
@@ -683,34 +686,42 @@ class _QuickActionButton extends StatelessWidget {
     required this.icon,
     required this.backgroundColor,
     required this.iconColor,
+    required this.labelStyle,
+    this.onTap,
   });
 
   final String label;
   final IconData icon;
   final Color backgroundColor;
   final Color iconColor;
+  final TextStyle labelStyle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(9),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(9),
+      child: Column(
+        children: [
+          Container(
+            width: 96,
+            height: 48,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
-          child: Icon(icon, color: iconColor, size: 24),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 10, color: Colors.black),
-        ),
-      ],
+          const SizedBox(height: 5),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: labelStyle,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -757,15 +768,15 @@ class _WelcomeText extends StatelessWidget {
       children: [
         Text(
           '$greeting, $firstName!',
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         const Text(
           'Ready to check your money?',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             color: Color(0xFF494323),
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ],

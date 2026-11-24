@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'auth_service.dart';
-import 'login_screen.dart';
+import 'package:hisaabmitra/screens/login_screen.dart';
+import 'package:hisaabmitra/services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

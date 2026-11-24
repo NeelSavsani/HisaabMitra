@@ -1,12 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hisaabmitra/welcome_screen.dart';
+import 'package:hisaabmitra/screens/onboard2_screen.dart';
 
-import 'onboard_screen.dart';
-
-class OnboardScreen2 extends StatelessWidget {
-  const OnboardScreen2({super.key});
+class OnboardScreen extends StatelessWidget {
+  const OnboardScreen({super.key});
 
   static const Color backgroundColor = Color(0xFFFDF9E8);
   static const Color primaryColor = Color(0xFF8078F9);
@@ -20,16 +17,13 @@ class OnboardScreen2 extends StatelessWidget {
           children: [
             // Top section: Logo and Skip button
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Image.asset(
                     'assets/images/common_logo.png',
-                    width: 105,
+                    width: 150,
                     height: 45,
                     fit: BoxFit.contain,
                     alignment: Alignment.centerLeft,
@@ -48,7 +42,7 @@ class OnboardScreen2 extends StatelessWidget {
 
                     // Onboarding Illustration
                     Image.asset(
-                      'assets/images/onboard_2.png',
+                      'assets/images/onboard_1.png',
                       width: double.infinity,
                       height: MediaQuery.of(context).size.height * 0.4,
                       fit: BoxFit.contain,
@@ -61,14 +55,14 @@ class OnboardScreen2 extends StatelessWidget {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: 'Your Hisaab\n',
+                            text: 'Your Money\n',
                             style: GoogleFonts.chewy(
                               fontSize: 48,
                               color: const Color(0xFF494323),
                             ),
                           ),
                           TextSpan(
-                            text: 'Made Super Easy',
+                            text: 'Your Hisaab',
                             style: GoogleFonts.chewy(
                               fontSize: 48,
                               color: primaryColor,
@@ -89,26 +83,15 @@ class OnboardScreen2 extends StatelessWidget {
                     const SizedBox(
                       width: 300,
                       child: Text(
-                        'From tracking every rupee to splitting bills with friends, everything you need to manage your money is right here.',
+                        'Say goodbye to messy diaries and confusing '
+                        'calculations. Track your daily expenses, '
+                        'manage your income and keep your finances '
+                        'organised — all in one place.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 15,
                           height: 1.5,
                           color: Color(0xFF77717F),
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 30,),
-
-                    SizedBox(
-                      width: 300,
-                      child: Text(
-                        'Less Calculation, More Celebration!',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.chewy(
-                          fontSize: 18,
-                          color: Color(0xFF494323)
                         ),
                       ),
                     ),
@@ -136,7 +119,7 @@ class OnboardScreen2 extends StatelessWidget {
                         width: 9,
                         height: 9,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFD6D6D6),
+                          color: Color(0xFFFFD92F),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -145,69 +128,47 @@ class OnboardScreen2 extends StatelessWidget {
                         width: 9,
                         height: 9,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFFFD92F),
+                          color: Color(0xFFD6D6D6),
                           shape: BoxShape.circle,
                         ),
                       ),
                     ],
                   ),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Back button (Left)
-                      SizedBox(
-                        width: 65,
-                        height: 40,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const OnboardScreen(),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFD2D2D2),
-                            foregroundColor: Colors.black,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: const Icon(Icons.arrow_back, size: 17),
-                        ),
-                      ),
+                  const SizedBox(height: 14),
 
-                      // Next button (Right)
-                      SizedBox(
-                        width: 65,
-                        height: 40,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const WelcomeScreen(),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                  // Next button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      width: 65,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const OnboardScreen2(),
                             ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
                           ),
-                          child: const Icon(Icons.arrow_forward, size: 17),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [Icon(Icons.arrow_forward, size: 17)],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-
-                  SizedBox(height: 26,)
+                  SizedBox(height: 30),
                 ],
               ),
             ),
