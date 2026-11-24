@@ -22,6 +22,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   TimeOfDay _selectedTime = TimeOfDay.now();
   bool _hasReachedEnd = false;
 
+  void _selectTransactionType(bool isExpense) {
+    setState(() {
+      _isExpense = isExpense;
+      _selectedCategory = isExpense ? 'Food' : 'Salary';
+    });
+  }
+
   Future<void> _pickDate() async {
     FocusScope.of(context).unfocus();
     final picked = await showDatePicker(
@@ -105,20 +112,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               child: ElevatedButton(
                 onPressed: _hasReachedEnd ? () {} : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _yellowColor,
-                  foregroundColor: Colors.black,
+                  backgroundColor: _isExpense ? _yellowColor : _primaryColor,
+                  foregroundColor: _isExpense ? Colors.black : Colors.white,
                   disabledBackgroundColor: const Color(0xFFC6C6C6),
                   disabledForegroundColor: const Color(0xFF8D8D8D),
                   elevation: 0,
                   shape: const StadiumBorder(),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.check, size: 20),
                     SizedBox(width: 8),
                     Text(
-                      'Save Expense',
+                      _isExpense ? 'Save Expense' : 'Save Income',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -184,12 +190,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           _TransactionTypeButton(
                             label: 'Expense',
                             selected: _isExpense,
-                            onTap: () => setState(() => _isExpense = true),
+                            selectedColor: _yellowColor,
+                            onTap: () => _selectTransactionType(true),
                           ),
                           _TransactionTypeButton(
                             label: 'Income',
                             selected: !_isExpense,
-                            onTap: () => setState(() => _isExpense = false),
+                            selectedColor: _primaryColor,
+                            selectedForegroundColor: Colors.white,
+                            onTap: () => _selectTransactionType(false),
                           ),
                         ],
                       ),
@@ -199,21 +208,26 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
                       decoration: BoxDecoration(
-                        color: _yellowColor,
+                        color: _isExpense ? _yellowColor : _primaryColor,
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Icon(Icons.payments_outlined, size: 19),
+                              Icon(
+                                Icons.payments_outlined,
+                                size: 19,
+                                color: _isExpense ? Colors.black : Colors.white,
+                              ),
                               SizedBox(width: 9),
                               Text(
                                 'Enter Amount',
                                 style: TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w600,
+                                  color: _isExpense ? Colors.black : Colors.white,
                                 ),
                               ),
                             ],
@@ -221,12 +235,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Text(
+                              Text(
                                 '₹',
                                 style: TextStyle(
                                   fontSize: 42,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF9A8120),
+                                  color: _isExpense
+                                      ? const Color(0xFF9A8120)
+                                      : Colors.white,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -240,15 +256,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                         decimal: true,
                                       ),
                                   cursorHeight: 42,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 42,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF806B18),
+                                    color: _isExpense
+                                        ? const Color(0xFF806B18)
+                                        : Colors.white,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: '0.00',
-                                    hintStyle: const TextStyle(
-                                      color: Color(0xFF9A8120),
+                                    hintStyle: TextStyle(
+                                      color: _isExpense
+                                          ? const Color(0xFF9A8120)
+                                          : const Color(0xFFE7E4FF),
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -256,17 +276,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(11),
-                                      borderSide: const BorderSide(
-                                        color: Color.fromRGBO(0, 0, 0, 0.25),
+                                      borderSide: BorderSide(
+                                        color: _isExpense
+                                            ? const Color.fromRGBO(0, 0, 0, 0.25)
+                                            : Colors.white.withValues(alpha: 0.7),
                                         width: 1,
                                       ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(11),
                                       borderSide: BorderSide(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.25,
-                                        ),
+                                        color: _isExpense
+                                            ? Colors.black.withValues(alpha: 0.25)
+                                            : Colors.white.withValues(alpha: 0.7),
                                         width: 3,
                                       ),
                                     ),
@@ -276,9 +298,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          const Text(
+                          Text(
                             'Clear, Straightforward Record For Your Wallet',
-                            style: TextStyle(fontSize: 13),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: _isExpense ? Colors.black : Colors.white,
+                            ),
                           ),
                         ],
                       ),
@@ -295,7 +320,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Title of expense', style: TextStyle(fontWeight: FontWeight.w500),),
+                          Text(
+                            _isExpense ? 'Title of expense' : 'Title of income',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
                           const SizedBox(height: 8),
                           TextField(
                             controller: _titleController,
@@ -357,7 +385,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             crossAxisSpacing: 6,
                             mainAxisSpacing: 10,
                             childAspectRatio: 0.9,
-                            children: [
+                            children: _isExpense ? [
                               _CategoryOption(
                                 label: 'Food',
                                 icon: Icons.restaurant,
@@ -422,6 +450,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                   () => _selectedCategory = 'Other',
                                 ),
                               ),
+                            ] : [
+                              _CategoryOption(label: 'Salary', icon: Icons.payments_outlined, selected: _selectedCategory == 'Salary', selectedColor: _primaryColor, selectedForegroundColor: Colors.white, onTap: () => setState(() => _selectedCategory = 'Salary')),
+                              _CategoryOption(label: 'Groceries', icon: Icons.laptop_chromebook_outlined, selected: _selectedCategory == 'Groceries', selectedColor: _primaryColor, selectedForegroundColor: Colors.white, onTap: () => setState(() => _selectedCategory = 'Groceries')),
+                              _CategoryOption(label: 'Pocket Money', icon: Icons.groups_2_outlined, selected: _selectedCategory == 'Pocket Money', selectedColor: _primaryColor, selectedForegroundColor: Colors.white, onTap: () => setState(() => _selectedCategory = 'Pocket Money')),
+                              _CategoryOption(label: 'Investment', icon: Icons.trending_up, selected: _selectedCategory == 'Investment', selectedColor: _primaryColor, selectedForegroundColor: Colors.white, onTap: () => setState(() => _selectedCategory = 'Investment')),
+                              _CategoryOption(label: 'Rental', icon: Icons.house_outlined, selected: _selectedCategory == 'Rental', selectedColor: _primaryColor, selectedForegroundColor: Colors.white, onTap: () => setState(() => _selectedCategory = 'Rental')),
+                              _CategoryOption(label: 'Business', icon: Icons.storefront_outlined, selected: _selectedCategory == 'Business', selectedColor: _primaryColor, selectedForegroundColor: Colors.white, onTap: () => setState(() => _selectedCategory = 'Business')),
+                              _CategoryOption(label: 'Gift', icon: Icons.card_giftcard_outlined, selected: _selectedCategory == 'Gift', selectedColor: _primaryColor, selectedForegroundColor: Colors.white, onTap: () => setState(() => _selectedCategory = 'Gift')),
+                              _CategoryOption(label: 'Other', icon: Icons.more_horiz, selected: _selectedCategory == 'Other', selectedColor: _primaryColor, selectedForegroundColor: Colors.white, onTap: () => setState(() => _selectedCategory = 'Other')),
                             ],
                           ),
                         ],
@@ -497,6 +534,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 ),
                                 icon: Icons.qr_code_2,
                                 selected: _selectedPaymentMode == 'UPI',
+                                incomeMode: !_isExpense,
                                 onTap: () => setState(
                                   () => _selectedPaymentMode = 'UPI',
                                 ),
@@ -508,6 +546,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 ),
                                 icon: Icons.payments_outlined,
                                 selected: _selectedPaymentMode == 'Cash',
+                                incomeMode: !_isExpense,
                                 onTap: () => setState(
                                   () => _selectedPaymentMode = 'Cash',
                                 ),
@@ -519,6 +558,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 ),
                                 icon: Icons.credit_card_outlined,
                                 selected: _selectedPaymentMode == 'Card',
+                                incomeMode: !_isExpense,
                                 onTap: () => setState(
                                   () => _selectedPaymentMode = 'Card',
                                 ),
@@ -531,6 +571,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 icon: Icons.account_balance_outlined,
                                 selected:
                                     _selectedPaymentMode == 'Net Banking',
+                                incomeMode: !_isExpense,
                                 onTap: () => setState(
                                   () => _selectedPaymentMode = 'Net Banking',
                                 ),
@@ -542,6 +583,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 ),
                                 icon: Icons.more_horiz,
                                 selected: _selectedPaymentMode == 'Other',
+                                incomeMode: !_isExpense,
                                 onTap: () => setState(
                                   () => _selectedPaymentMode = 'Other',
                                 ),
@@ -568,13 +610,17 @@ class _PaymentModeOption extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.selected,
-    required this.onTap, required TextStyle labelStyle,
+    required this.onTap,
+    required this.labelStyle,
+    this.incomeMode = false,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
+  final TextStyle labelStyle;
+  final bool incomeMode;
 
   @override
   Widget build(BuildContext context) {
@@ -583,19 +629,28 @@ class _PaymentModeOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFFFDD32) : const Color(0xFFF4F3ED),
+          color: selected
+              ? (incomeMode ? const Color(0xFF8078F9) : const Color(0xFFFFDD32))
+              : const Color(0xFFF4F3ED),
           borderRadius: BorderRadius.circular(22),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: const Color(0xFF796B24)),
+            Icon(
+              icon,
+              size: 15,
+              color: selected && incomeMode
+                  ? Colors.white
+                  : const Color(0xFF796B24),
+            ),
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(
+              style: labelStyle.copyWith(
                 fontSize: 13,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
+                color: selected && incomeMode ? Colors.white : Colors.black,
               ),
             ),
           ],
@@ -668,12 +723,16 @@ class _CategoryOption extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onTap,
+    this.selectedColor = const Color(0xFFFFDD32),
+    this.selectedForegroundColor = Colors.black,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
+  final Color selectedColor;
+  final Color selectedForegroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -681,19 +740,26 @@ class _CategoryOption extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFFFDD32) : const Color(0xFFF4F3ED),
+          color: selected ? selectedColor : const Color(0xFFF4F3ED),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 23),
+            Icon(
+              icon,
+              size: 23,
+              color: selected ? selectedForegroundColor : Colors.black,
+            ),
             const SizedBox(height: 4),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11),
+              style: TextStyle(
+                fontSize: 11,
+                color: selected ? selectedForegroundColor : Colors.black,
+              ),
             ),
           ],
         ),
@@ -707,11 +773,15 @@ class _TransactionTypeButton extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.selectedColor = const Color(0xFFFFDD32),
+    this.selectedForegroundColor = Colors.black,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final Color selectedColor;
+  final Color selectedForegroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -721,13 +791,17 @@ class _TransactionTypeButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFFFDD32) : Colors.transparent,
+            color: selected ? selectedColor : Colors.transparent,
             borderRadius: BorderRadius.circular(22),
           ),
           alignment: Alignment.center,
           child: Text(
             label,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: selected ? selectedForegroundColor : Colors.black,
+            ),
           ),
         ),
       ),
