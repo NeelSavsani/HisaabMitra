@@ -17,8 +17,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   bool _isExpense = true;
   String _selectedCategory = 'Food';
+  String _selectedPaymentMode = 'UPI';
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
+  bool _hasReachedEnd = false;
 
   Future<void> _pickDate() async {
     FocusScope.of(context).unfocus();
@@ -74,6 +76,61 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _backgroundColor,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          child: Container(
+            decoration: BoxDecoration(
+              boxShadow: _hasReachedEnd
+                  ? [
+                      BoxShadow(
+                        offset: const Offset(0, 10),
+                        blurRadius: 15,
+                        spreadRadius: -3,
+                        color: Colors.black.withValues(alpha: 0.1),
+                      ),
+                      BoxShadow(
+                        offset: const Offset(0, 4),
+                        blurRadius: 6,
+                        spreadRadius: -4,
+                        color: Colors.black.withValues(alpha: 0.1),
+                      ),
+                    ]
+                  : const [],
+            ),
+            child: SizedBox(
+              height: 54,
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _hasReachedEnd ? () {} : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _yellowColor,
+                  foregroundColor: Colors.black,
+                  disabledBackgroundColor: const Color(0xFFC6C6C6),
+                  disabledForegroundColor: const Color(0xFF8D8D8D),
+                  elevation: 0,
+                  shape: const StadiumBorder(),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.check, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Save Expense',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -102,9 +159,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ),
             const Divider(height: 1, color: Color(0xFFE7E3D3)),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-                child: Column(
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (notification) {
+                  if (!_hasReachedEnd &&
+                      notification.metrics.axis == Axis.vertical &&
+                      notification.metrics.pixels >=
+                          notification.metrics.maxScrollExtent) {
+                    setState(() => _hasReachedEnd = true);
+                  }
+                  return false;
+                },
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                  child: Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(5),
@@ -236,7 +303,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             decoration: InputDecoration(
                               hintText: 'Enter a title',
                               filled: true,
-                              fillColor: const Color(0xFFFFF5CF),
+                              fillColor: const Color(0xFFF5F4ED),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 17,
@@ -258,7 +325,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             decoration: InputDecoration(
                               hintText: 'Add a description',
                               filled: true,
-                              fillColor: const Color(0xFFFFF5CF),
+                              fillColor: const Color(0xFFF5F4ED),
                               contentPadding: const EdgeInsets.all(16),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(11),
@@ -392,8 +459,143 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFFEFECE2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(
+                                Icons.credit_card_outlined,
+                                size: 18,
+                                color: Color(0xFF796B24),
+                              ),
+                              SizedBox(width: 7),
+                              Text(
+                                'Payment Mode',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _PaymentModeOption(
+                                label: 'UPI',
+                                labelStyle: TextStyle(
+                                  fontWeight: FontWeight.w500
+                                ),
+                                icon: Icons.qr_code_2,
+                                selected: _selectedPaymentMode == 'UPI',
+                                onTap: () => setState(
+                                  () => _selectedPaymentMode = 'UPI',
+                                ),
+                              ),
+                              _PaymentModeOption(
+                                label: 'Cash',
+                                labelStyle: TextStyle(
+                                    fontWeight: FontWeight.w500
+                                ),
+                                icon: Icons.payments_outlined,
+                                selected: _selectedPaymentMode == 'Cash',
+                                onTap: () => setState(
+                                  () => _selectedPaymentMode = 'Cash',
+                                ),
+                              ),
+                              _PaymentModeOption(
+                                label: 'Card',
+                                labelStyle: TextStyle(
+                                    fontWeight: FontWeight.w500
+                                ),
+                                icon: Icons.credit_card_outlined,
+                                selected: _selectedPaymentMode == 'Card',
+                                onTap: () => setState(
+                                  () => _selectedPaymentMode = 'Card',
+                                ),
+                              ),
+                              _PaymentModeOption(
+                                label: 'Net Banking',
+                                labelStyle: TextStyle(
+                                    fontWeight: FontWeight.w500
+                                ),
+                                icon: Icons.account_balance_outlined,
+                                selected:
+                                    _selectedPaymentMode == 'Net Banking',
+                                onTap: () => setState(
+                                  () => _selectedPaymentMode = 'Net Banking',
+                                ),
+                              ),
+                              _PaymentModeOption(
+                                label: 'Other',
+                                labelStyle: TextStyle(
+                                    fontWeight: FontWeight.w500
+                                ),
+                                icon: Icons.more_horiz,
+                                selected: _selectedPaymentMode == 'Other',
+                                onTap: () => setState(
+                                  () => _selectedPaymentMode = 'Other',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
+                  ),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PaymentModeOption extends StatelessWidget {
+  const _PaymentModeOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap, required TextStyle labelStyle,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFFFDD32) : const Color(0xFFF4F3ED),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: const Color(0xFF796B24)),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
               ),
             ),
           ],
