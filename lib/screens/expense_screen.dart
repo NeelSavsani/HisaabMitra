@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:hisaabmitra/config/database_config.dart';
 import 'package:hisaabmitra/screens/add_expense.dart';
 
 class ExpenseScreen extends StatefulWidget {
@@ -13,6 +17,7 @@ class ExpenseScreen extends StatefulWidget {
 class _ExpenseScreenState extends State<ExpenseScreen> {
   final Map<_ExpenseFilterType, int> _selectedFilters = {};
   final List<_ExpenseFilterType> _filterOrder = [];
+  String _searchQuery = '';
 
   static const List<_ExpenseFilterType> _defaultFilterOrder = [
     _ExpenseFilterType.date,
@@ -56,6 +61,127 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     ..._filterOrder,
     ..._defaultFilterOrder.where((type) => !_filterOrder.contains(type)),
   ];
+
+  DatabaseReference? _transactionsReference() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    return FirebaseDatabase.instanceFor(
+      app: Firebase.app(),
+      databaseURL: realtimeDatabaseUrl,
+    ).ref('users/${user.uid}/transactions');
+  }
+
+  List<_ExpenseTransaction> _filterTransactions(
+    List<_ExpenseTransaction> transactions,
+  ) {
+    final now = DateTime.now();
+    return transactions.where((transaction) {
+      final date = transaction.date;
+      final dateFilter = _selectedFilters[_ExpenseFilterType.date];
+      if (dateFilter == 0 && (date.year != now.year || date.month != now.month)) {
+        return false;
+      }
+      if (dateFilter == 1 &&
+          (date.isAfter(now) || now.difference(date).inDays > 30)) {
+        return false;
+      }
+      if (dateFilter == 2 &&
+          (date.isAfter(now) || now.difference(date).inDays > 90)) {
+        return false;
+      }
+
+      final statusFilter = _selectedFilters[_ExpenseFilterType.status];
+      if (statusFilter != null &&
+          transaction.type != (statusFilter == 0 ? 'expense' : 'income')) {
+        return false;
+      }
+
+      final amountFilter = _selectedFilters[_ExpenseFilterType.amount];
+      if (amountFilter == 0 && transaction.amount > 200) return false;
+      if (amountFilter == 1 &&
+          (transaction.amount <= 200 || transaction.amount > 500)) {
+        return false;
+      }
+      if (amountFilter == 2 &&
+          (transaction.amount <= 500 || transaction.amount > 2000)) {
+        return false;
+      }
+      if (amountFilter == 3 && transaction.amount <= 2000) return false;
+
+      final paymentFilter = _selectedFilters[_ExpenseFilterType.paymentMode];
+      if (paymentFilter != null &&
+          transaction.paymentMode.toLowerCase() !=
+              const ['upi', 'cash', 'card', 'net banking', 'other'][paymentFilter]) {
+        return false;
+      }
+
+      if (_searchQuery.isNotEmpty &&
+          !transaction.title.toLowerCase().contains(_searchQuery) &&
+          !transaction.category.toLowerCase().contains(_searchQuery) &&
+          !transaction.paymentMode.toLowerCase().contains(_searchQuery)) {
+        return false;
+      }
+      return true;
+    }).toList()..sort((a, b) => b.date.compareTo(a.date));
+  }
+
+  Widget _buildTransactionList() {
+    return StreamBuilder<DatabaseEvent>(
+      stream: _transactionsReference()?.onValue,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: Text('Could not load transactions.')),
+          );
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final transactions = _filterTransactions(
+          _readExpenseTransactions(snapshot.data?.snapshot.value),
+        );
+        if (transactions.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: Text('No transactions found')),
+          );
+        }
+
+        final groups = <DateTime, List<_ExpenseTransaction>>{};
+        for (final transaction in transactions) {
+          final date = transaction.date;
+          final day = DateTime(date.year, date.month, date.day);
+          groups.putIfAbsent(day, () => []).add(transaction);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final entry in groups.entries) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  _expenseGroupLabel(entry.key),
+                  style: GoogleFonts.chewy(fontSize: 16),
+                ),
+              ),
+              for (final transaction in entry.value)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _ExpenseTransactionCard(transaction: transaction),
+                ),
+              const SizedBox(height: 4),
+            ],
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _openFilter(_ExpenseFilterType type) async {
     final selectedIndex = await _showExpenseFilterDialog(
@@ -207,8 +333,10 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     color: const Color(0xFFE9E9E6),
                     borderRadius: BorderRadius.circular(28),
                   ),
-                  child: const TextField(
+                  child: TextField(
                     textInputAction: TextInputAction.search,
+                    onChanged: (value) =>
+                        setState(() => _searchQuery = value.trim().toLowerCase()),
                     decoration: InputDecoration(
                       hintText: 'Search Transactions',
                       prefixIcon: Icon(Icons.search, color: Colors.black),
@@ -231,6 +359,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 18),
+                _buildTransactionList(),
               ],
             ),
           ),
@@ -239,6 +369,203 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     );
   }
 }
+
+List<_ExpenseTransaction> _readExpenseTransactions(Object? value) {
+  if (value is! Map) return [];
+
+  final transactions = <_ExpenseTransaction>[];
+  for (final raw in value.values) {
+    if (raw is! Map) continue;
+    final data = Map<String, dynamic>.from(raw);
+    final amount = double.tryParse(data['amount']?.toString() ?? '');
+    final timestamp = int.tryParse(data['createdAt']?.toString() ?? '');
+    final type = data['type']?.toString().toLowerCase();
+    if (amount == null || timestamp == null ||
+        (type != 'expense' && type != 'income')) {
+      continue;
+    }
+    transactions.add(
+      _ExpenseTransaction(
+        type: type!,
+        amount: amount,
+        date: DateTime.fromMillisecondsSinceEpoch(timestamp),
+        title: data['title']?.toString().trim().isNotEmpty == true
+            ? data['title'].toString().trim()
+            : 'Transaction',
+        category: data['category']?.toString() ?? '',
+        paymentMode: data['paymentMode']?.toString() ?? '',
+      ),
+    );
+  }
+  transactions.sort((a, b) => b.date.compareTo(a.date));
+  return transactions;
+}
+
+String _expenseGroupLabel(DateTime date) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  const weekdays = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+  ];
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final day = DateTime(date.year, date.month, date.day);
+  final dateLabel = '${date.day} ${months[date.month - 1]}';
+  if (day == today) return 'Today, $dateLabel';
+  if (day == today.subtract(const Duration(days: 1))) {
+    return 'Yesterday, $dateLabel';
+  }
+  return '${weekdays[date.weekday - 1]}, $dateLabel';
+}
+
+String _formatExpenseAmount(double amount) {
+  final fixed = amount == amount.truncateToDouble()
+      ? amount.toInt().toString()
+      : amount.toStringAsFixed(2);
+  final parts = fixed.split('.');
+  final whole = parts.first;
+  if (whole.length <= 3) return fixed;
+
+  final groups = <String>[];
+  var remaining = whole;
+  groups.insert(0, remaining.substring(remaining.length - 3));
+  remaining = remaining.substring(0, remaining.length - 3);
+  while (remaining.length > 2) {
+    groups.insert(0, remaining.substring(remaining.length - 2));
+    remaining = remaining.substring(0, remaining.length - 2);
+  }
+  if (remaining.isNotEmpty) groups.insert(0, remaining);
+  return '${groups.join(',')}${parts.length > 1 ? '.${parts[1]}' : ''}';
+}
+
+class _ExpenseTransaction {
+  const _ExpenseTransaction({
+    required this.type,
+    required this.amount,
+    required this.date,
+    required this.title,
+    required this.category,
+    required this.paymentMode,
+  });
+
+  final String type;
+  final double amount;
+  final DateTime date;
+  final String title;
+  final String category;
+  final String paymentMode;
+}
+
+class _ExpenseTransactionCard extends StatelessWidget {
+  const _ExpenseTransactionCard({required this.transaction});
+
+  final _ExpenseTransaction transaction;
+
+  @override
+  Widget build(BuildContext context) {
+    final isIncome = transaction.type == 'income';
+    final category = transaction.category.toLowerCase();
+    final avatarColor = isIncome
+        ? const Color(0xFFFFDD32)
+        : category == 'food'
+        ? const Color(0xFFE0DCFF)
+        : const Color(0xFFE2E2E2);
+    final payment = transaction.paymentMode;
+    final paymentColor = payment.toLowerCase() == 'upi'
+        ? const Color(0xFFFFDD32)
+        : payment.toLowerCase() == 'cash'
+        ? const Color(0xFFE0DCFF)
+        : const Color(0xFFE2E2E2);
+    final dayLabel = '${transaction.date.day} ${_fullMonth(transaction.date.month)}';
+    final titleInitial = transaction.title.trim().isEmpty
+        ? 'T'
+        : transaction.title.trim()[0].toUpperCase();
+
+    return Container(
+      height: 62,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: avatarColor,
+            child: Text(
+              titleInitial,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: isIncome ? Colors.black : const Color(0xFF8078F9),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  transaction.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text(dayLabel, style: const TextStyle(fontSize: 11)),
+                    const SizedBox(width: 6),
+                    if (payment.isNotEmpty)
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 78),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: paymentColor,
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        child: Text(
+                          payment.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 8),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 2),
+          Text(
+            '${isIncome ? '+' : '−'} ₹${_formatExpenseAmount(transaction.amount)}',
+            maxLines: 1,
+            style: TextStyle(
+              color: isIncome ? const Color(0xFF20A340) : Colors.red,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _fullMonth(int month) => const [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+][month - 1];
 
 class _ExpenseFilterChip extends StatelessWidget {
   const _ExpenseFilterChip({
@@ -521,54 +848,58 @@ class _ExpenseFilterDialogState extends State<_ExpenseFilterDialog> {
 
   Widget _buildOptionRow(int index) {
     final option = _options[index];
-    return SizedBox(
-      height: 40,
-      child: Row(
-        children: [
-          if (option.icon != null) ...[
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                color: option.iconBackgroundColor ?? _primaryColor,
-                shape: BoxShape.circle,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _selectedIndex = index),
+      child: SizedBox(
+        height: 40,
+        child: Row(
+          children: [
+            if (option.icon != null) ...[
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: option.iconBackgroundColor ?? _primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  option.icon,
+                  size: 14,
+                  color: option.iconColor ?? Colors.white,
+                ),
               ),
-              child: Icon(
-                option.icon,
-                size: 14,
-                color: option.iconColor ?? Colors.white,
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Text(
+                option.label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: option.bold ? FontWeight.w700 : FontWeight.normal,
+                ),
               ),
             ),
-            const SizedBox(width: 10),
+            Checkbox(
+              value: _selectedIndex == index,
+              onChanged: (value) {
+                if (value == true) setState(() => _selectedIndex = index);
+              },
+              fillColor: WidgetStateProperty.resolveWith((states) {
+                return states.contains(WidgetState.selected)
+                    ? _primaryColor
+                    : const Color(0xFFD9D9D9);
+              }),
+              checkColor: Colors.white,
+              side: BorderSide.none,
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
           ],
-          Expanded(
-            child: Text(
-              option.label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: option.bold ? FontWeight.w700 : FontWeight.normal,
-              ),
-            ),
-          ),
-          Checkbox(
-            value: _selectedIndex == index,
-            onChanged: (value) {
-              if (value == true) setState(() => _selectedIndex = index);
-            },
-            fillColor: WidgetStateProperty.resolveWith((states) {
-              return states.contains(WidgetState.selected)
-                  ? _primaryColor
-                  : const Color(0xFFD9D9D9);
-            }),
-            checkColor: Colors.white,
-            side: BorderSide.none,
-            visualDensity: VisualDensity.compact,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
