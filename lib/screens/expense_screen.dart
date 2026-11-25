@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:hisaabmitra/config/database_config.dart';
 import 'package:hisaabmitra/screens/add_expense.dart';
+import 'package:hisaabmitra/screens/transaction_tile.dart';
 
 class ExpenseScreen extends StatefulWidget {
   const ExpenseScreen({super.key});
@@ -173,7 +174,14 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
               for (final transaction in entry.value)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: _ExpenseTransactionCard(transaction: transaction),
+                  child: TransactionTile(
+                    type: transaction.type,
+                    amount: transaction.amount,
+                    date: transaction.date,
+                    title: transaction.title,
+                    paymentMode: transaction.paymentMode,
+                    colorIndex: transaction.colorIndex,
+                  ),
                 ),
               const SizedBox(height: 4),
             ],
@@ -315,7 +323,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     ),
                     const Spacer(),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () => _showDownloadDialog(context),
                       tooltip: 'Download transactions',
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFF8078F9),
@@ -374,7 +382,8 @@ List<_ExpenseTransaction> _readExpenseTransactions(Object? value) {
   if (value is! Map) return [];
 
   final transactions = <_ExpenseTransaction>[];
-  for (final raw in value.values) {
+  for (final entry in value.entries) {
+    final raw = entry.value;
     if (raw is! Map) continue;
     final data = Map<String, dynamic>.from(raw);
     final amount = double.tryParse(data['amount']?.toString() ?? '');
@@ -394,8 +403,19 @@ List<_ExpenseTransaction> _readExpenseTransactions(Object? value) {
             : 'Transaction',
         category: data['category']?.toString() ?? '',
         paymentMode: data['paymentMode']?.toString() ?? '',
+        id: entry.key.toString(),
+        colorIndex: 0,
       ),
     );
+  }
+  transactions.sort((a, b) => a.id.compareTo(b.id));
+  if (transactions.isNotEmpty) {
+    final randomStart = transactions.first.id.hashCode % 3;
+    for (var index = 0; index < transactions.length; index++) {
+      transactions[index] = transactions[index].withColorIndex(
+        (randomStart + index) % 3,
+      );
+    }
   }
   transactions.sort((a, b) => b.date.compareTo(a.date));
   return transactions;
@@ -420,26 +440,6 @@ String _expenseGroupLabel(DateTime date) {
   return '${weekdays[date.weekday - 1]}, $dateLabel';
 }
 
-String _formatExpenseAmount(double amount) {
-  final fixed = amount == amount.truncateToDouble()
-      ? amount.toInt().toString()
-      : amount.toStringAsFixed(2);
-  final parts = fixed.split('.');
-  final whole = parts.first;
-  if (whole.length <= 3) return fixed;
-
-  final groups = <String>[];
-  var remaining = whole;
-  groups.insert(0, remaining.substring(remaining.length - 3));
-  remaining = remaining.substring(0, remaining.length - 3);
-  while (remaining.length > 2) {
-    groups.insert(0, remaining.substring(remaining.length - 2));
-    remaining = remaining.substring(0, remaining.length - 2);
-  }
-  if (remaining.isNotEmpty) groups.insert(0, remaining);
-  return '${groups.join(',')}${parts.length > 1 ? '.${parts[1]}' : ''}';
-}
-
 class _ExpenseTransaction {
   const _ExpenseTransaction({
     required this.type,
@@ -448,6 +448,8 @@ class _ExpenseTransaction {
     required this.title,
     required this.category,
     required this.paymentMode,
+    required this.id,
+    required this.colorIndex,
   });
 
   final String type;
@@ -456,116 +458,20 @@ class _ExpenseTransaction {
   final String title;
   final String category;
   final String paymentMode;
+  final String id;
+  final int colorIndex;
+
+  _ExpenseTransaction withColorIndex(int index) => _ExpenseTransaction(
+    type: type,
+    amount: amount,
+    date: date,
+    title: title,
+    category: category,
+    paymentMode: paymentMode,
+    id: id,
+    colorIndex: index,
+  );
 }
-
-class _ExpenseTransactionCard extends StatelessWidget {
-  const _ExpenseTransactionCard({required this.transaction});
-
-  final _ExpenseTransaction transaction;
-
-  @override
-  Widget build(BuildContext context) {
-    final isIncome = transaction.type == 'income';
-    final category = transaction.category.toLowerCase();
-    final avatarColor = isIncome
-        ? const Color(0xFFFFDD32)
-        : category == 'food'
-        ? const Color(0xFFE0DCFF)
-        : const Color(0xFFE2E2E2);
-    final payment = transaction.paymentMode;
-    final paymentColor = payment.toLowerCase() == 'upi'
-        ? const Color(0xFFFFDD32)
-        : payment.toLowerCase() == 'cash'
-        ? const Color(0xFFE0DCFF)
-        : const Color(0xFFE2E2E2);
-    final dayLabel = '${transaction.date.day} ${_fullMonth(transaction.date.month)}';
-    final titleInitial = transaction.title.trim().isEmpty
-        ? 'T'
-        : transaction.title.trim()[0].toUpperCase();
-
-    return Container(
-      height: 62,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: avatarColor,
-            child: Text(
-              titleInitial,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: isIncome ? Colors.black : const Color(0xFF8078F9),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Text(dayLabel, style: const TextStyle(fontSize: 11)),
-                    const SizedBox(width: 6),
-                    if (payment.isNotEmpty)
-                      Container(
-                        constraints: const BoxConstraints(maxWidth: 78),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: paymentColor,
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: Text(
-                          payment.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 8),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 2),
-          Text(
-            '${isIncome ? '+' : '−'} ₹${_formatExpenseAmount(transaction.amount)}',
-            maxLines: 1,
-            style: TextStyle(
-              color: isIncome ? const Color(0xFF20A340) : Colors.red,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-String _fullMonth(int month) => const [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-][month - 1];
 
 class _ExpenseFilterChip extends StatelessWidget {
   const _ExpenseFilterChip({
@@ -631,6 +537,260 @@ class _ExpenseFilterOption {
   final Color? iconColor;
   final Color? iconBackgroundColor;
   final bool bold;
+}
+
+Future<void> _showDownloadDialog(BuildContext context) {
+  return showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Close download options',
+    barrierColor: Colors.black.withValues(alpha: 0.38),
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (context, animation, secondaryAnimation) =>
+        const _DownloadDialog(),
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final slide = Tween<Offset>(
+        begin: const Offset(0, 1),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.linear));
+      return SlideTransition(position: slide, child: child);
+    },
+  );
+}
+
+class _DownloadDialog extends StatefulWidget {
+  const _DownloadDialog();
+
+  @override
+  State<_DownloadDialog> createState() => _DownloadDialogState();
+}
+
+class _DownloadDialogState extends State<_DownloadDialog> {
+  static const Color _primaryColor = Color(0xFF8078F9);
+  String _selectedDateRange = 'All Time';
+  String _selectedFormat = '';
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: double.infinity,
+          height: 420,
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 22),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 40,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Text(
+                      'Download Your Hisaab',
+                      style: GoogleFonts.chewy(
+                        fontSize: 22,
+                        color: _primaryColor,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        constraints: const BoxConstraints.tightFor(
+                          width: 40,
+                          height: 40,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: _primaryColor,
+                          foregroundColor: Colors.white,
+                        ),
+                        icon: const Icon(Icons.close, size: 22),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Text(
+                'Get a copy of all your transactions for your records.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 20),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Select Date Range',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildDateRangeRow(const ['All Time', 'This Month', 'Last Month']),
+              const SizedBox(height: 10),
+              _buildDateRangeRow(const ['Last 3 Months', 'This Year', 'Custom']),
+              const SizedBox(height: 16),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Choose File Format',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildFormatCard(
+                      label: 'PDF',
+                      subtitle: 'Easy to read & share',
+                      icon: Icons.picture_as_pdf_rounded,
+                      color: const Color(0xFFE53935),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildFormatCard(
+                      label: 'Excel (.xlsx)',
+                      subtitle: 'Easy to analyse',
+                      icon: Icons.grid_on_rounded,
+                      color: const Color(0xFF20A464),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                height: 40,
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: const Text(
+                    'Download Transaction',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateRangeRow(List<String> labels) {
+    return Row(
+      children: [
+        for (var index = 0; index < labels.length; index++) ...[
+          if (index > 0) const SizedBox(width: 12),
+          Expanded(
+            child: _DownloadChoice(
+              label: labels[index],
+              selected: _selectedDateRange == labels[index],
+              onTap: () => setState(() => _selectedDateRange = labels[index]),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildFormatCard({
+    required String label,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+  }) {
+    final format = label == 'PDF' ? 'PDF' : 'Excel';
+    final selected = _selectedFormat == format;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedFormat = format),
+      child: Container(
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFD8D3EE) : Colors.white,
+          border: Border.all(
+            color: selected ? _primaryColor : Colors.black,
+            width: selected ? 1.5 : 1,
+          ),
+          borderRadius: BorderRadius.circular(11),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 27),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 9),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DownloadChoice extends StatelessWidget {
+  const _DownloadChoice({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFD8D3EE) : Colors.white,
+          border: Border.all(
+            color: selected ? const Color(0xFF8078F9) : Colors.black,
+            width: selected ? 1.5 : 1,
+          ),
+          borderRadius: BorderRadius.circular(11),
+        ),
+        child: Text(label, style: const TextStyle(fontSize: 13)),
+      ),
+    );
+  }
 }
 
 Future<int?> _showExpenseFilterDialog(

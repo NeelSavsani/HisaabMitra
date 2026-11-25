@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hisaabmitra/config/database_config.dart';
 import 'package:hisaabmitra/screens/add_expense.dart';
 import 'package:hisaabmitra/screens/expense_screen.dart';
+import 'package:hisaabmitra/screens/transaction_tile.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -335,13 +336,25 @@ class _RecentTransactionsSection extends StatelessWidget {
     return StreamBuilder<DatabaseEvent>(
       stream: transactions?.onValue,
       builder: (context, snapshot) {
-        final records = <Map>[];
+        final records = <Map<Object?, Object?>>[];
         final value = snapshot.data?.snapshot.value;
         if (value is Map) {
-          for (final item in value.values) {
+          for (final entry in value.entries) {
+            final item = entry.value;
             if (item is Map && item['amount'] != null && item['type'] != null) {
-              records.add(Map<Object?, Object?>.from(item));
+              final record = Map<Object?, Object?>.from(item);
+              record['id'] = entry.key.toString();
+              records.add(record);
             }
+          }
+        }
+        final colorOrder = [...records]
+          ..sort((a, b) => a['id'].toString().compareTo(b['id'].toString()));
+        if (colorOrder.isNotEmpty) {
+          final randomStart =
+              colorOrder.first['id'].toString().hashCode % 3;
+          for (var index = 0; index < colorOrder.length; index++) {
+            colorOrder[index]['colorIndex'] = (randomStart + index) % 3;
           }
         }
         records.sort((a, b) {
@@ -385,45 +398,23 @@ class _RecentTransactionsSection extends StatelessWidget {
                 ),
               )
             else
-              ...records.take(3).map((record) {
-                final type = record['type'].toString();
-                final isIncome = type.toLowerCase() == 'income';
-                final amount =
-                    double.tryParse(record['amount'].toString()) ?? 0;
+              ...records.take(4).map((record) {
+                final type = record['type'].toString().toLowerCase();
+                final amount = double.tryParse(record['amount'].toString()) ?? 0;
+                final timestamp =
+                    int.tryParse(record['createdAt']?.toString() ?? '') ?? 0;
+                final title = record['title']?.toString().trim();
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: isIncome
-                            ? const Color(0xFFE7F5E8)
-                            : const Color(0xFFFFE7E7),
-                        child: Icon(
-                          isIncome
-                              ? Icons.arrow_downward_rounded
-                              : Icons.arrow_upward_rounded,
-                          color: isIncome ? Colors.green : Colors.redAccent,
-                          size: 19,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          type.isEmpty
-                              ? 'Transaction'
-                              : '${type[0].toUpperCase()}${type.substring(1)}',
-                          style: const TextStyle(fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                      Text(
-                        '${isIncome ? '+' : '-'}${_formatRupees(amount)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: isIncome ? Colors.green : Colors.black,
-                        ),
-                      ),
-                    ],
+                  child: TransactionTile(
+                    type: type,
+                    amount: amount,
+                    date: DateTime.fromMillisecondsSinceEpoch(timestamp),
+                    title: title == null || title.isEmpty
+                        ? 'Transaction'
+                        : title,
+                    paymentMode: record['paymentMode']?.toString() ?? '',
+                    colorIndex: record['colorIndex'] as int? ?? 0,
                   ),
                 );
               }),
