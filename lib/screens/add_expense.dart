@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:hisaabmitra/config/database_config.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});
@@ -15,17 +19,84 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool _isExpense = true;
   String _selectedCategory = 'Food';
   String _selectedPaymentMode = 'UPI';
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   bool _hasReachedEnd = false;
+  bool _isSaving = false;
+
+  Future<void> _saveTransaction() async {
+    final amount = double.tryParse(_amountController.text.trim());
+    if (amount == null || !amount.isFinite || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid amount to continue.')),
+      );
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sign in to save this transaction.')),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    final transactionDate = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
+    try {
+      final database = FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: realtimeDatabaseUrl,
+      );
+      await database.ref('users/${user.uid}/transactions').push().set({
+        'type': _isExpense ? 'expense' : 'income',
+        'amount': amount,
+        'title': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'category': _selectedCategory,
+        'paymentMode': _selectedPaymentMode,
+        // The dashboard uses createdAt for monthly totals and recent ordering.
+        'createdAt': transactionDate.millisecondsSinceEpoch,
+        'savedAt': ServerValue.timestamp,
+      });
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on FirebaseException catch (error) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save transaction: ${error.message ?? error.code}')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save transaction: $error')),
+      );
+    }
+  }
 
   void _selectTransactionType(bool isExpense) {
+    if (_isExpense == isExpense) return;
+
+    FocusScope.of(context).unfocus();
+    if (_scrollController.hasClients) _scrollController.jumpTo(0);
     setState(() {
       _isExpense = isExpense;
       _selectedCategory = isExpense ? 'Food' : 'Salary';
+      _hasReachedEnd = false;
     });
   }
 
@@ -76,6 +147,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _amountController.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -110,7 +182,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               height: 54,
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _hasReachedEnd ? () {} : null,
+                onPressed: _hasReachedEnd && !_isSaving
+                    ? _saveTransaction
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _isExpense ? _yellowColor : _primaryColor,
                   foregroundColor: _isExpense ? Colors.black : Colors.white,
@@ -176,6 +250,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   return false;
                 },
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
                   child: Column(
                   children: [

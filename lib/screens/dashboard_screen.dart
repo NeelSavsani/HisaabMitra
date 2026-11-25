@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:hisaabmitra/config/database_config.dart';
 import 'package:hisaabmitra/screens/add_expense.dart';
+import 'package:hisaabmitra/screens/expense_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -59,18 +60,24 @@ class DashboardScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
-                children: const [
+                children: [
                   Expanded(
                     child: _BottomMenuItem(
                       label: 'Home',
                       icon: Icons.grid_view_rounded,
                       selected: true,
+                      onTap: () {},
                     ),
                   ),
                   Expanded(
                     child: _BottomMenuItem(
                       label: 'Expenses',
                       icon: Icons.receipt_long_outlined,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const ExpenseScreen(),
+                        ),
+                      ),
                     ),
                   ),
                   SizedBox(
@@ -111,7 +118,8 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
       body: SafeArea(
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -128,7 +136,11 @@ class DashboardScreen extends StatelessWidget {
                   IconButton(
                     onPressed: () {},
                     tooltip: 'Notifications',
-                    alignment: Alignment.centerRight,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 48,
+                      height: 48,
+                    ),
+                    alignment: Alignment.center,
                     padding: EdgeInsets.zero,
                     icon: const Icon(Icons.notifications_none_rounded),
                     color: const Color(0xFF494323),
@@ -246,8 +258,8 @@ class DashboardScreen extends StatelessWidget {
                 transactions: profile?.child('transactions'),
               ),
             ),
-            const Expanded(child: SizedBox()),
           ],
+          ),
         ),
       ),
     );
@@ -427,30 +439,35 @@ class _BottomMenuItem extends StatelessWidget {
     required this.label,
     required this.icon,
     this.selected = false,
+    this.onTap,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = selected ? const Color(0xFF8078F9) : Colors.black54;
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, size: 25, color: color),
-        const SizedBox(height: 3),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: color,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 25, color: color),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
