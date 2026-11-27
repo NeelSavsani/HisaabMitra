@@ -9,6 +9,7 @@ class TransactionTile extends StatelessWidget {
     required this.title,
     required this.paymentMode,
     required this.colorIndex,
+    this.onTap,
   });
 
   final String type;
@@ -17,6 +18,7 @@ class TransactionTile extends StatelessWidget {
   final String title;
   final String paymentMode;
   final int colorIndex;
+  final VoidCallback? onTap;
 
   static const _palettes = [
     _TransactionPalette(Color(0xFFD8D3EE), Color(0xFF8078F9)),
@@ -36,14 +38,17 @@ class TransactionTile extends StatelessWidget {
         : const Color(0xFFE2E2E2);
     final titleInitial = title.trim().isEmpty ? 'T' : title.trim()[0].toUpperCase();
 
-    return Container(
-      height: 62,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Row(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        height: 62,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
         children: [
           CircleAvatar(
             radius: 16,
@@ -116,6 +121,7 @@ class TransactionTile extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

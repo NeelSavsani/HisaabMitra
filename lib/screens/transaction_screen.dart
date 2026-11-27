@@ -6,16 +6,18 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:hisaabmitra/config/database_config.dart';
 import 'package:hisaabmitra/screens/add_expense.dart';
+import 'package:hisaabmitra/screens/bottom_menu_bar.dart';
+import 'package:hisaabmitra/screens/transaction_detail_screen.dart';
 import 'package:hisaabmitra/screens/transaction_tile.dart';
 
-class ExpenseScreen extends StatefulWidget {
-  const ExpenseScreen({super.key});
+class TransactionScreen extends StatefulWidget {
+  const TransactionScreen({super.key});
 
   @override
-  State<ExpenseScreen> createState() => _ExpenseScreenState();
+  State<TransactionScreen> createState() => _TransactionScreenState();
 }
 
-class _ExpenseScreenState extends State<ExpenseScreen> {
+class _TransactionScreenState extends State<TransactionScreen> {
   final Map<_ExpenseFilterType, int> _selectedFilters = {};
   final List<_ExpenseFilterType> _filterOrder = [];
   String _searchQuery = '';
@@ -181,6 +183,18 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     title: transaction.title,
                     paymentMode: transaction.paymentMode,
                     colorIndex: transaction.colorIndex,
+                    onTap: () {
+                      final userId = FirebaseAuth.instance.currentUser?.uid;
+                      if (userId == null) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => TransactionDetailScreen(
+                            userId: userId,
+                            transactionId: transaction.id,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               const SizedBox(height: 4),
@@ -241,69 +255,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
           child: const Icon(Icons.add, size: 32),
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        left: false,
-        right: false,
-        child: SizedBox(
-          width: double.infinity,
-          height: 84,
-          child: CustomPaint(
-            painter: const _ExpensesNotchedBarPainter(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _ExpensesBottomMenuItem(
-                      label: 'Home',
-                      icon: Icons.grid_view_rounded,
-                      onTap: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                  const Expanded(
-                    child: _ExpensesBottomMenuItem(
-                      label: 'Expenses',
-                      icon: Icons.receipt_long_outlined,
-                      selected: true,
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 96,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(height: 28),
-                        Text(
-                          'Add Expense',
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.visible,
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Expanded(
-                    child: _ExpensesBottomMenuItem(
-                      label: 'Reports',
-                      icon: Icons.analytics_outlined,
-                    ),
-                  ),
-                  const Expanded(
-                    child: _ExpensesBottomMenuItem(
-                      label: 'Profile',
-                      icon: Icons.account_circle_outlined,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      bottomNavigationBar: BottomMenuBar(
+        selectedTab: BottomMenuTab.transactions,
+        onHomeTap: () => Navigator.of(context).pop(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -1065,79 +1019,3 @@ class _ExpenseFilterDialogState extends State<_ExpenseFilterDialog> {
   }
 }
 
-class _ExpensesBottomMenuItem extends StatelessWidget {
-  const _ExpensesBottomMenuItem({
-    required this.label,
-    required this.icon,
-    this.selected = false,
-    this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? const Color(0xFF8078F9) : Colors.black54;
-
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 25, color: color),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: color,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ExpensesNotchedBarPainter extends CustomPainter {
-  const _ExpensesNotchedBarPainter();
-
-  static const double _cornerRadius = 16;
-  static const double _notchHalfWidth = 78;
-  static const double _notchDepth = 42;
-
-  Path _buildPath(Size size) {
-    final cx = size.width / 2;
-    return Path()
-      ..moveTo(0, _cornerRadius)
-      ..quadraticBezierTo(0, 0, _cornerRadius, 0)
-      ..lineTo(cx - _notchHalfWidth, 0)
-      ..cubicTo(cx - 50, 0, cx - 42, _notchDepth, cx, _notchDepth)
-      ..cubicTo(cx + 42, _notchDepth, cx + 50, 0, cx + _notchHalfWidth, 0)
-      ..lineTo(size.width - _cornerRadius, 0)
-      ..quadraticBezierTo(size.width, 0, size.width, _cornerRadius)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = _buildPath(size);
-    final shadowPaint = Paint()
-      ..color = const Color(0xFFD5D3F5).withValues(alpha: 0.69)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
-    canvas.drawPath(path.shift(const Offset(0, -2)), shadowPaint);
-    canvas.drawPath(
-      path,
-      Paint()..color = Colors.white,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _ExpensesNotchedBarPainter oldDelegate) => false;
-}

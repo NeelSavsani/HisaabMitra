@@ -6,7 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:hisaabmitra/config/database_config.dart';
 import 'package:hisaabmitra/screens/add_expense.dart';
-import 'package:hisaabmitra/screens/expense_screen.dart';
+import 'package:hisaabmitra/screens/bottom_menu_bar.dart';
+import 'package:hisaabmitra/screens/transaction_screen.dart';
 import 'package:hisaabmitra/screens/transaction_tile.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -49,73 +50,11 @@ class DashboardScreen extends StatelessWidget {
           child: const Icon(Icons.add, size: 32),
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        left: false,
-        right: false,
-        child: SizedBox(
-          width: double.infinity,
-          height: 84,
-          child: CustomPaint(
-            painter: const _NotchedBarPainter(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _BottomMenuItem(
-                      label: 'Home',
-                      icon: Icons.grid_view_rounded,
-                      selected: true,
-                      onTap: () {},
-                    ),
-                  ),
-                  Expanded(
-                    child: _BottomMenuItem(
-                      label: 'Expenses',
-                      icon: Icons.receipt_long_outlined,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const ExpenseScreen(),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 96,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(height: 28),
-                        Text(
-                          'Add Expense',
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.visible,
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: _BottomMenuItem(
-                      label: 'Reports',
-                      icon: Icons.analytics_outlined,
-                    ),
-                  ),
-                  Expanded(
-                    child: _BottomMenuItem(
-                      label: 'Profile',
-                      icon: Icons.account_circle_outlined,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+      bottomNavigationBar: BottomMenuBar(
+        selectedTab: BottomMenuTab.home,
+        onHomeTap: () {},
+        onTransactionsTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const TransactionScreen()),
         ),
       ),
       body: SafeArea(
@@ -267,65 +206,6 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-/// Paints the bottom bar with a smooth, wide curved notch in the center
-/// (like the reference design) instead of a circular notch.
-class _NotchedBarPainter extends CustomPainter {
-  const _NotchedBarPainter();
-
-  static const double _cornerRadius = 16;
-  static const double _notchHalfWidth = 78;
-  static const double _notchDepth = 42;
-
-  Path _buildPath(Size size) {
-    final cx = size.width / 2;
-    final path = Path()
-      ..moveTo(0, _cornerRadius)
-      ..quadraticBezierTo(0, 0, _cornerRadius, 0)
-      ..lineTo(cx - _notchHalfWidth, 0)
-    // Smooth curve going down into the notch.
-      ..cubicTo(
-        cx - 50,
-        0,
-        cx - 42,
-        _notchDepth,
-        cx,
-        _notchDepth,
-      )
-    // Smooth curve coming back up out of the notch.
-      ..cubicTo(
-        cx + 42,
-        _notchDepth,
-        cx + 50,
-        0,
-        cx + _notchHalfWidth,
-        0,
-      )
-      ..lineTo(size.width - _cornerRadius, 0)
-      ..quadraticBezierTo(size.width, 0, size.width, _cornerRadius)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    return path;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = _buildPath(size);
-
-    // Box shadow: x: 0, y: -2, blur: 2, spread: 0, color: D5D3F5, opacity: 69%.
-    // (Flutter's blur sigma = CSS/Figma blur / 2.)
-    final shadowPaint = Paint()
-      ..color = const Color(0xFFD5D3F5).withValues(alpha: 0.69)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
-    canvas.drawPath(path.shift(const Offset(0, -2)), shadowPaint);
-
-    canvas.drawPath(path, Paint()..color = Colors.white);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 class _RecentTransactionsSection extends StatelessWidget {
   const _RecentTransactionsSection({required this.transactions});
 
@@ -421,44 +301,6 @@ class _RecentTransactionsSection extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-}
-
-class _BottomMenuItem extends StatelessWidget {
-  const _BottomMenuItem({
-    required this.label,
-    required this.icon,
-    this.selected = false,
-    this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? const Color(0xFF8078F9) : Colors.black54;
-
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 25, color: color),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: color,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
