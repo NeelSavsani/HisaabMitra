@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 import 'package:hisaabmitra/config/database_config.dart';
+import 'package:hisaabmitra/screens/add_expense.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
   const TransactionDetailScreen({
@@ -34,7 +35,21 @@ class TransactionDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 46,
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () async {
+                    final snapshot = await transaction.get();
+                    if (!context.mounted || !snapshot.exists) return;
+                    final value = snapshot.value;
+                    if (value is! Map) return;
+
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => AddExpenseScreen(
+                          transactionId: transactionId,
+                          initialData: Map<String, dynamic>.from(value),
+                        ),
+                      ),
+                    );
+                  },
                   icon: const Icon(Icons.edit_outlined, size: 19),
                   label: const Text('Edit Transaction'),
                   style: ElevatedButton.styleFrom(

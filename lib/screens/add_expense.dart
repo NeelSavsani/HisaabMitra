@@ -5,7 +5,14 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:hisaabmitra/config/database_config.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+  const AddExpenseScreen({
+    super.key,
+    this.transactionId,
+    this.initialData,
+  });
+
+  final String? transactionId;
+  final Map<String, dynamic>? initialData;
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -27,6 +34,50 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   TimeOfDay _selectedTime = TimeOfDay.now();
   bool _hasReachedEnd = false;
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final data = widget.initialData;
+    if (data == null) return;
+
+    _amountController.text = data['amount']?.toString() ?? '';
+    _titleController.text = data['title']?.toString() ?? '';
+    _descriptionController.text = data['description']?.toString() ?? '';
+    _isExpense = data['type']?.toString().toLowerCase() != 'income';
+
+    final category = data['category']?.toString();
+    final expenseCategories = [
+      'Food', 'Groceries', 'Shopping', 'Travel',
+      'Bills', 'Medical', 'Entertainment', 'Other',
+    ];
+    final incomeCategories = [
+      'Salary', 'Groceries', 'Pocket Money', 'Investment',
+      'Rental', 'Business', 'Gift', 'Other',
+    ];
+    final availableCategories =
+        _isExpense ? expenseCategories : incomeCategories;
+    if (category != null && availableCategories.contains(category)) {
+      _selectedCategory = category;
+    } else {
+      _selectedCategory = _isExpense ? 'Food' : 'Salary';
+    }
+
+    const paymentModes = ['UPI', 'Cash', 'Card', 'Net Banking', 'Other'];
+    final paymentMode = data['paymentMode']?.toString();
+    _selectedPaymentMode = paymentModes.contains(paymentMode)
+        ? paymentMode!
+        : paymentMode?.toLowerCase() == 'direct bank transfer'
+        ? 'Net Banking'
+        : 'Other';
+
+    final timestamp = int.tryParse(data['createdAt']?.toString() ?? '');
+    if (timestamp != null) {
+      final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      _selectedDate = dateTime;
+      _selectedTime = TimeOfDay.fromDateTime(dateTime);
+    }
+  }
 
   Future<void> _saveTransaction() async {
     final amount = double.tryParse(_amountController.text.trim());
@@ -59,7 +110,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         app: Firebase.app(),
         databaseURL: realtimeDatabaseUrl,
       );
-      await database.ref('users/${user.uid}/transactions').push().set({
+      final transactionData = {
         'type': _isExpense ? 'expense' : 'income',
         'amount': amount,
         'title': _titleController.text.trim(),
@@ -68,8 +119,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         'paymentMode': _selectedPaymentMode,
         // The dashboard uses createdAt for monthly totals and recent ordering.
         'createdAt': transactionDate.millisecondsSinceEpoch,
-        'savedAt': ServerValue.timestamp,
-      });
+      };
+      final transactions = database.ref('users/${user.uid}/transactions');
+      if (widget.transactionId == null) {
+        await transactions.push().set({
+          ...transactionData,
+          'savedAt': ServerValue.timestamp,
+        });
+      } else {
+        await transactions.child(widget.transactionId!).update({
+          ...transactionData,
+          'updatedAt': ServerValue.timestamp,
+        });
+      }
 
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -198,7 +260,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   children: [
                     SizedBox(width: 8),
                     Text(
-                      _isExpense ? 'Save Expense' : 'Save Income',
+                      widget.transactionId == null
+                          ? (_isExpense ? 'Save Expense' : 'Save Income')
+                          : (_isExpense ? 'Update Expense' : 'Update Income'),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,

@@ -8,6 +8,7 @@ import 'package:hisaabmitra/config/database_config.dart';
 import 'package:hisaabmitra/screens/add_expense.dart';
 import 'package:hisaabmitra/screens/bottom_menu_bar.dart';
 import 'package:hisaabmitra/screens/transaction_screen.dart';
+import 'package:hisaabmitra/screens/transaction_detail_screen.dart';
 import 'package:hisaabmitra/screens/transaction_tile.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -54,7 +55,12 @@ class DashboardScreen extends StatelessWidget {
         selectedTab: BottomMenuTab.home,
         onHomeTap: () {},
         onTransactionsTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const TransactionScreen()),
+          PageRouteBuilder<void>(
+            pageBuilder: (_, __, ___) => const TransactionScreen(),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+            transitionsBuilder: (_, __, ___, child) => child,
+          ),
         ),
       ),
       body: SafeArea(
@@ -196,6 +202,7 @@ class DashboardScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
               child: _RecentTransactionsSection(
                 transactions: profile?.child('transactions'),
+                userId: user?.uid,
               ),
             ),
           ],
@@ -207,9 +214,13 @@ class DashboardScreen extends StatelessWidget {
 }
 
 class _RecentTransactionsSection extends StatelessWidget {
-  const _RecentTransactionsSection({required this.transactions});
+  const _RecentTransactionsSection({
+    required this.transactions,
+    required this.userId,
+  });
 
   final DatabaseReference? transactions;
+  final String? userId;
 
   @override
   Widget build(BuildContext context) {
@@ -295,6 +306,19 @@ class _RecentTransactionsSection extends StatelessWidget {
                         : title,
                     paymentMode: record['paymentMode']?.toString() ?? '',
                     colorIndex: record['colorIndex'] as int? ?? 0,
+                    onTap: () {
+                      final id = record['id']?.toString();
+                      final uid = userId;
+                      if (id == null || uid == null || id.isEmpty) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => TransactionDetailScreen(
+                            userId: uid,
+                            transactionId: id,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
               }),
