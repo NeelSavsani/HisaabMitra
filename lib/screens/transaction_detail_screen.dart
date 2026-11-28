@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 import 'package:hisaabmitra/config/database_config.dart';
 import 'package:hisaabmitra/screens/add_expense.dart';
+import 'package:hisaabmitra/screens/transaction_record_image.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
   const TransactionDetailScreen({
@@ -105,7 +107,11 @@ class TransactionDetailScreen extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () => _shareTransactionRecord(
+                      context,
+                      transaction,
+                      transactionId,
+                    ),
                     icon: const Icon(Icons.share_outlined),
                   ),
                 ],
@@ -130,7 +136,8 @@ class TransactionDetailScreen extends StatelessWidget {
                     return const Center(child: Text('Transaction not found.'));
                   }
                   final data = Map<String, dynamic>.from(value);
-                  final type = data['type']?.toString().toLowerCase() ?? 'expense';
+                  final type =
+                      data['type']?.toString().toLowerCase() ?? 'expense';
                   final isIncome = type == 'income';
                   final amount =
                       double.tryParse(data['amount']?.toString() ?? '') ?? 0;
@@ -188,7 +195,10 @@ class TransactionDetailScreen extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              const Divider(height: 18, color: Color(0xFFE8E4DA)),
+                              const Divider(
+                                height: 18,
+                                color: Color(0xFFE8E4DA),
+                              ),
                               _DetailRow(
                                 icon: Icons.badge_outlined,
                                 label: 'Hisaab ID',
@@ -214,7 +224,10 @@ class TransactionDetailScreen extends StatelessWidget {
                                 label: 'Payment Mode',
                                 value: paymentMode,
                               ),
-                              const Divider(height: 18, color: Color(0xFFE8E4DA)),
+                              const Divider(
+                                height: 18,
+                                color: Color(0xFFE8E4DA),
+                              ),
                               const Row(
                                 children: [
                                   Icon(Icons.description_outlined, size: 17),
@@ -253,6 +266,41 @@ class TransactionDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+Future<void> _shareTransactionRecord(
+  BuildContext context,
+  DatabaseReference transaction,
+  String transactionId,
+) async {
+  try {
+    final snapshot = await transaction.get();
+    if (!context.mounted) return;
+    final value = snapshot.value;
+    if (!snapshot.exists || value is! Map) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Transaction record was not found.')),
+      );
+      return;
+    }
+
+    final data = Map<String, dynamic>.from(value)..['id'] = transactionId;
+    final imageBytes = await createTransactionRecordImage(data);
+    await const MethodChannel('hisaabmitra/share')
+        .invokeMethod<void>('shareTransactionImage', imageBytes);
+  } on PlatformException catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message ?? 'Could not share record.')),
+      );
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not create transaction record.')),
+      );
+    }
   }
 }
 
@@ -386,10 +434,7 @@ class _DetailRow extends StatelessWidget {
               textAlign: TextAlign.right,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -429,8 +474,18 @@ IconData _categoryIcon(String category) {
 
 String _formatDateTime(DateTime date) {
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
   final minute = date.minute.toString().padLeft(2, '0');
