@@ -122,27 +122,26 @@ Future<Uint8List> createTransactionRecordImage(
     size: 8,
     color: isIncome ? const Color(0xFF198A34) : const Color(0xFF725D00),
     align: TextAlign.center,
+    expandToWidth: true,
     weight: FontWeight.w600,
   );
   _text(
     canvas,
     'CATEGORY',
-    352,
+    359,
     155,
-    70,
+    63,
     size: 6,
     color: amountColor.withValues(alpha: .8),
-    align: TextAlign.right,
   );
   _text(
     canvas,
     data['category']?.toString() ?? 'Other',
-    340,
+    359,
     168,
-    82,
+    63,
     size: 9,
     color: amountColor,
-    align: TextAlign.right,
     weight: FontWeight.w700,
   );
 
@@ -327,6 +326,7 @@ double _text(
   TextAlign align = TextAlign.left,
   int maxLines = 1,
   double? lineHeight,
+  bool expandToWidth = false,
 }) {
   final painter = TextPainter(
     text: TextSpan(
@@ -342,7 +342,7 @@ double _text(
     textAlign: align,
     maxLines: maxLines,
     ellipsis: '…',
-  )..layout(maxWidth: width);
+  )..layout(minWidth: expandToWidth ? width : 0, maxWidth: width);
   painter.paint(canvas, Offset(x, y));
   final height = painter.height;
   painter.dispose();
